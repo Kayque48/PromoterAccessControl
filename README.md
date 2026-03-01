@@ -1,5 +1,7 @@
 # ControlePromotores.Api
 
+> 🇺🇸 [English Version](README_EN.md)
+
 API REST desenvolvida em **ASP.NET Core (.NET 10)** para controle de acesso de promotores em empresas. Permite registrar entrada e saída de promotores, gerenciar empresas e promotores, e autenticar usuários via **JWT**.
 
 ---
