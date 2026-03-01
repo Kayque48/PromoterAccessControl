@@ -1,5 +1,7 @@
 # PromoterCheckIn.Api
 
+> 🇧🇷 [Versão em Português](README.md)
+
 REST API built with **ASP.NET Core (.NET 10)** for managing promoter access control across companies. Allows registering check-ins and check-outs, managing companies and promoters, and authenticating users via **JWT**.
 
 ---
