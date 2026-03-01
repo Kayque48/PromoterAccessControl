@@ -4,6 +4,13 @@ API REST desenvolvida em **ASP.NET Core (.NET 10)** para controle de acesso de p
 
 ---
 
+## Objetivo
+
+O ControlePromotores.Api tem como objetivo fornecer uma solução centralizada para o controle de acesso e monitoramento de promotores vinculados a empresas. O sistema permite registrar e validar o cadastro de empresas e promotores, controlar as movimentações de entrada e saída com rastreabilidade completa, e garantir que apenas promotores autorizados realizem registros nos dias permitidos.
+Por meio de autenticação segura com JWT e controle de perfis de acesso, o sistema assegura que cada usuário opere apenas dentro das funcionalidades permitidas ao seu nível de permissão. Além disso, disponibiliza um dashboard com informações consolidadas sobre a presença e o histórico de movimentações dos promotores, oferecendo uma visão gerencial em tempo real para os administradores.
+A solução foi desenvolvida com foco em integridade dos dados, segurança das informações e escalabilidade, utilizando tecnologias modernas como ASP.NET Core, Entity Framework Core e MySQL, sendo capaz de atender empresas de diferentes portes que necessitem de controle eficiente sobre a atuação de seus promotores em campo.
+
+
 ## Tecnologias
 
 | Pacote | Versão |
