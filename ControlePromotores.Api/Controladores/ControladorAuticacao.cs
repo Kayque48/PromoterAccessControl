@@ -37,7 +37,7 @@ namespace ControlePromotores.Api.Controllers
     }
     usuario = new
                 {
-                    usuario.Id,
+        usuario.Id,
                     usuario.Nome,
                     usuario.Perfil
     }

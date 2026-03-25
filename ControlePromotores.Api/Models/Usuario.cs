@@ -18,7 +18,7 @@ namespace ControlePromotores.Api.Models
 		public string SenhaHash { get; set; }
 
 		public string Perfil { get; set; } //"admin" ou "usuario"
-    }
-	
-	
+	}
+
+
 }
