@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ControlePromotores.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8f5eeb49e7dbcbda39d039a4f91b6ace8b3d74f7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4971921062726202526167850346617d3ed405cc")]
 [assembly: System.Reflection.AssemblyProductAttribute("ControlePromotores.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ControlePromotores.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
