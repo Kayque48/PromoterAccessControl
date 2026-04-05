@@ -8,6 +8,11 @@ using ControlePromotores.Api.Models;
 
 namespace ControlePromotores.Api.Services
 {
+    /// <summary>
+    /// Serviço responsável pela geração de tokens JWT para autenticação stateless.
+    /// Implementa segurança via assinatura com chave simétrica (HMAC-SHA256) conforme RFC 7519.
+    /// Tokens contêm claims embarcados (user ID, login, role, nome) para autorização sem consulta ao banco.
+    /// </summary>
     public class TokenService
     {
         private readonly IConfiguration _configuration;
@@ -27,6 +32,11 @@ namespace ControlePromotores.Api.Services
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(jwtKey);
 
+            // Claims embarcados: Informações do usuário incluídas no token para autorização sem banco de dados.
+            // - NameIdentifier: ID únco do usuário (para auditar quem fez cada ação).
+            // - Name: Login (identidade no token).
+            // - Role: Perfil do usuário (admin/usuario) para controle de acesso baseado em role (RBAC).
+            // - Nome: Nome completo do usuário (para display na UI).
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]

@@ -20,10 +20,11 @@ namespace ControlePromotores.Api.Data
             {
                 Nome = "Administrador",
                 Login = "admin",
-                SenhaHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                SenhaHash = BCrypt.Net.BCrypt.HashPassword("senha123"),
+                Telefone = "0000-0000",
+                Cargo = "Administrador",
                 Perfil = "admin",
                 Ativo = true,
-                DataCriacao = DateTime.UtcNow
             };
 
             context.Usuarios.Add(usuarioAdmin);

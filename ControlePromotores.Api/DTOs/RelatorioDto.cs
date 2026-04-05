@@ -11,8 +11,8 @@ namespace ControlePromotores.Api.DTOs
     public class RelatorioRegistroResponse
     {
         public int Id { get; set; }
-        public string PromotorNome { get; set; }
-        public string EmpresaNome { get; set; }
+        public required string PromotorNome { get; set; }
+        public required string EmpresaNome { get; set; }
         public DateTime Entrada { get; set; }
         public DateTime? Saida { get; set; }
         public int? DuracaoMinutos { get; set; }
@@ -20,9 +20,9 @@ namespace ControlePromotores.Api.DTOs
 
     public class RelatorioCsvResponse
     {
-        public byte[] ConteudoArquivo { get; set; }
-        public string NomeArquivo { get; set; }
-        public string ContentType { get; set; }
+        public required byte[] ConteudoArquivo { get; set; }
+        public required string NomeArquivo { get; set; }
+        public required string ContentType { get; set; }
     }
 
     public class RelatorioAgregadoResponse
@@ -31,6 +31,6 @@ namespace ControlePromotores.Api.DTOs
         public decimal DuracaoMediaMinutos { get; set; }
         public int PromotoresUnicos { get; set; }
         public int EmpresasUnicos { get; set; }
-        public List<RelatorioRegistroResponse> Registros { get; set; }
+        public List<RelatorioRegistroResponse>? Registros { get; set; }
     }
 }

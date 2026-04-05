@@ -1,8 +1,0 @@
-D:\ControlePromotores.Api\obj\Debug\net10.0\ControlePromotores.Api.csproj.AssemblyReference.cache
-D:\ControlePromotores.Api\obj\Debug\net10.0\rpswa.dswa.cache.json
-D:\ControlePromotores.Api\obj\Debug\net10.0\ControlePromotores.Api.GeneratedMSBuildEditorConfig.editorconfig
-D:\ControlePromotores.Api\obj\Debug\net10.0\ControlePromotores.Api.AssemblyInfoInputs.cache
-D:\ControlePromotores.Api\obj\Debug\net10.0\ControlePromotores.Api.AssemblyInfo.cs
-D:\ControlePromotores.Api\obj\Debug\net10.0\ControlePromotores.Api.csproj.CoreCompileInputs.cache
-D:\ControlePromotores.Api\obj\Debug\net10.0\ControlePromotores.Api.MvcApplicationPartsAssemblyInfo.cs
-D:\ControlePromotores.Api\obj\Debug\net10.0\ControlePromotores.Api.MvcApplicationPartsAssemblyInfo.cache

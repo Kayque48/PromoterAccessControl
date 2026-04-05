@@ -5,6 +5,11 @@ using ControlePromotores.Api.DTOs;
 
 namespace ControlePromotores.Api.Services
 {
+    /// <summary>
+    /// Serviço que gerencia o ciclo de vida de registros de acesso (entrada/saída).
+    /// Implementa validações de negócio: impede entradas duplicadas, calcula permanência ao registrar saída.
+    /// Modelo: Cada visita = 2 registros (entrada + saída) com timestamp e duração armazenados.
+    /// </summary>
     public class RegistroAcessoService
     {
         private readonly PromotoresContext _context;
@@ -14,124 +19,222 @@ namespace ControlePromotores.Api.Services
             _context = context;
         }
 
-        public async Task<RegistroAcessoResponse> RegistrarEntradaAsync(int promotorId)
+        public async Task<RegistroResponse> RegistrarEntradaAsync(int promotorId, int empresaId, int usuarioId, string? observacao = null)
         {
             var promotor = await _context.Promotores.FindAsync(promotorId);
             if (promotor == null)
-                throw new KeyNotFoundException("Promotor não encontrado");
+                throw new KeyNotFoundException("Promotor não encontrado.");
 
-            // Verificar se já existe entrada sem saída
-            var registroAberto = await _context.RegistrosAcesso
-                .FirstOrDefaultAsync(r => r.PromotorId == promotorId && r.Saida == null);
+            var empresa = await _context.Empresas.FindAsync(empresaId);
+            if (empresa == null)
+                throw new KeyNotFoundException("Empresa não encontrada.");
 
-            if (registroAberto != null)
-                throw new InvalidOperationException("Promotor já possui registro de entrada aberto");
+            var usuario = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null)
+                throw new KeyNotFoundException("Usuário não encontrado.");
 
-            var registro = new RegistroAcesso
+            var hoje = DateTime.UtcNow.Date;
+
+            // Validação de negócio: Impede entradas duplicadas (promotor não pode ter 2 entradas abertas no mesmo dia/empresa).
+            // Consulta: Busca entrada do dia atual SEM saída correspondente (saída posterior).
+            // Garante que cada promotor tem no máximo 1 visita ativa por empresa.
+            var entradaAberta = await _context.Registros
+                .Where(r => r.PromotorId == promotorId
+                            && r.EmpresaId == empresaId
+                            && r.Tipo == "entrada"
+                            && r.DataHora >= hoje)
+                .AnyAsync(r => !_context.Registros.Any(rs =>
+                    rs.PromotorId == r.PromotorId &&
+                    rs.EmpresaId == r.EmpresaId &&
+                    rs.Tipo == "saida" &&
+                    rs.DataHora > r.DataHora));
+
+            if (entradaAberta)
+                throw new InvalidOperationException("Já existe uma entrada em aberto para este promotor nesta empresa.");
+
+            var registro = new Registro
             {
                 PromotorId = promotorId,
-                Entrada = DateTime.UtcNow,
-                Saida = null
+                EmpresaId = empresaId,
+                Tipo = "entrada",
+                DataHora = DateTime.UtcNow,
+                RegistradoPor = usuarioId,
+                Observacao = observacao ?? null!
             };
 
-            _context.RegistrosAcesso.Add(registro);
+            _context.Registros.Add(registro);
             await _context.SaveChangesAsync();
 
-            return MapearParaResponse(registro, promotor.Nome);
+            return await MapearParaResponseAsync(registro.Id);
         }
 
-        public async Task<RegistroAcessoResponse> RegistrarSaidaAsync(int registroId)
+        public async Task<RegistroResponse> RegistrarSaidaAsync(int promotorId, int empresaId, int usuarioId, string? observacao = null)
         {
-            var registro = await _context.RegistrosAcesso
-                .Include(r => r.Promotor)
-                .FirstOrDefaultAsync(r => r.Id == registroId);
+            var promotor = await _context.Promotores.FindAsync(promotorId);
+            if (promotor == null)
+                throw new KeyNotFoundException("Promotor não encontrado.");
 
-            if (registro == null)
-                throw new KeyNotFoundException("Registro não encontrado");
+            var empresa = await _context.Empresas.FindAsync(empresaId);
+            if (empresa == null)
+                throw new KeyNotFoundException("Empresa não encontrada.");
 
-            if (registro.Saida != null)
-                throw new InvalidOperationException("Este registro já possui saída registrada");
+            var usuario = await _context.Usuarios.FindAsync(usuarioId);
+            if (usuario == null)
+                throw new KeyNotFoundException("Usuário não encontrado.");
 
-            registro.Saida = DateTime.UtcNow;
-            registro.TempoPermanenciaMinutos = (int)Math.Floor((registro.Saida.Value - registro.Entrada).TotalMinutes);
+            var hoje = DateTime.UtcNow.Date;
 
-            _context.RegistrosAcesso.Update(registro);
+            // Busca entrada aberta (sem saída posterior) no mesmo dia/empresa.
+            var entradaAberta = await _context.Registros
+                .Where(r => r.PromotorId == promotorId
+                            && r.EmpresaId == empresaId
+                            && r.Tipo == "entrada"
+                            && r.DataHora >= hoje)
+                .Where(r => !_context.Registros.Any(rs =>
+                    rs.PromotorId == r.PromotorId &&
+                    rs.EmpresaId == r.EmpresaId &&
+                    rs.Tipo == "saida" &&
+                    rs.DataHora > r.DataHora))
+                .OrderByDescending(r => r.DataHora)
+                .FirstOrDefaultAsync();
+
+            if (entradaAberta == null)
+                throw new InvalidOperationException("Não há entrada em aberto para registrar saída.");
+
+            // Cálculo de permanência: Diferença em minutos entre saída e entrada.
+            // Armazenado na tabela Registros para análise: duração média de visita, time-on-site, etc.
+            var dataSaida = DateTime.UtcNow;
+            var permanenciaMin = (int)Math.Floor((dataSaida - entradaAberta.DataHora).TotalMinutes);
+
+            var registro = new Registro
+            {
+                PromotorId = promotorId,
+                EmpresaId = empresaId,
+                Tipo = "saida",
+                DataHora = dataSaida,
+                PermanenciaMin = permanenciaMin,
+                RegistradoPor = usuarioId,
+                Observacao = observacao ?? null!
+            };
+
+            _context.Registros.Add(registro);
             await _context.SaveChangesAsync();
 
-            return MapearParaResponse(registro, registro.Promotor.Nome);
+            return await MapearParaResponseAsync(registro.Id);
         }
 
-        public async Task<List<PromotorAtativoResponse>> GetPromotoresAtivosAsync()
+        public async Task<List<PromotorAtivoResponse>> GetPromotoresAtivosAsync()
         {
             var agora = DateTime.UtcNow;
+            var hoje = agora.Date;
 
-            var registrosAbertos = await _context.RegistrosAcesso
+            var entradasAbertas = await _context.Registros
                 .Include(r => r.Promotor)
-                .Where(r => r.Saida == null)
+                .Include(r => r.Empresa)
+                .Where(r => r.Tipo == "entrada" && r.DataHora >= hoje)
+                .Where(r => !_context.Registros.Any(rs =>
+                    rs.PromotorId == r.PromotorId &&
+                    rs.EmpresaId == r.EmpresaId &&
+                    rs.Tipo == "saida" &&
+                    rs.DataHora > r.DataHora))
+                .OrderByDescending(r => r.DataHora)
                 .ToListAsync();
 
-            return registrosAbertos.Select(r => new PromotorAtativoResponse
+            return entradasAbertas.Select(r => new PromotorAtivoResponse
             {
-                Id = r.PromotorId,
-                Nome = r.Promotor.Nome,
-                Entrada = r.Entrada,
-                MinutosAtendimento = (int)Math.Floor((agora - r.Entrada).TotalMinutes)
+                PromotorId = r.PromotorId,
+                PromotorNome = r.Promotor.Nome,
+                EmpresaId = r.EmpresaId,
+                EmpresaNome = r.Empresa.RazaoSocial,
+                EntradaEm = r.DataHora,
+                MinutosEmAtendimento = (int)Math.Floor((agora - r.DataHora).TotalMinutes)
             }).ToList();
         }
 
-        public async Task<List<RegistroAcessoResponse>> GetRegistrosByPromotorAsync(int promotorId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<List<RegistroResponse>> GetRegistrosByPromotorAsync(int promotorId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
-            var query = _context.RegistrosAcesso
+            var query = _context.Registros
                 .Include(r => r.Promotor)
-                .Where(r => r.PromotorId == promotorId);
+                .Include(r => r.Empresa)
+                .Include(r => r.UsuarioRegistrador)
+                .Where(r => r.PromotorId == promotorId)
+                .AsQueryable();
 
             if (dataInicio.HasValue)
-                query = query.Where(r => r.Entrada >= dataInicio.Value);
+                query = query.Where(r => r.DataHora >= dataInicio.Value);
 
             if (dataFim.HasValue)
-                query = query.Where(r => r.Entrada <= dataFim.Value);
+                query = query.Where(r => r.DataHora <= dataFim.Value);
 
-            var registros = await query.ToListAsync();
-            return registros.Select(r => MapearParaResponse(r, r.Promotor.Nome)).ToList();
+            var registros = await query
+                .OrderByDescending(r => r.DataHora)
+                .ToListAsync();
+
+            return registros.Select(MapearParaResponse).ToList();
         }
 
-        public async Task<List<RegistroAcessoResponse>> GetRegistrosByEmpresaAsync(int empresaId, DateTime? dataInicio = null, DateTime? dataFim = null)
+        public async Task<List<RegistroResponse>> GetRegistrosByEmpresaAsync(int empresaId, DateTime? dataInicio = null, DateTime? dataFim = null)
         {
-            var query = _context.RegistrosAcesso
+            var query = _context.Registros
                 .Include(r => r.Promotor)
-                .ThenInclude(p => p.Empresa)
-                .Where(r => r.Promotor.EmpresaId == empresaId);
+                .Include(r => r.Empresa)
+                .Include(r => r.UsuarioRegistrador)
+                .Where(r => r.EmpresaId == empresaId)
+                .AsQueryable();
 
             if (dataInicio.HasValue)
-                query = query.Where(r => r.Entrada >= dataInicio.Value);
+                query = query.Where(r => r.DataHora >= dataInicio.Value);
 
             if (dataFim.HasValue)
-                query = query.Where(r => r.Entrada <= dataFim.Value);
+                query = query.Where(r => r.DataHora <= dataFim.Value);
 
-            var registros = await query.ToListAsync();
-            return registros.Select(r => MapearParaResponse(r, r.Promotor.Nome)).ToList();
+            var registros = await query
+                .OrderByDescending(r => r.DataHora)
+                .ToListAsync();
+
+            return registros.Select(MapearParaResponse).ToList();
         }
 
-        public async Task<RegistroAcessoResponse> GetByIdAsync(int id)
+        public async Task<RegistroResponse?> GetByIdAsync(int id)
         {
-            var registro = await _context.RegistrosAcesso
+            var registro = await _context.Registros
                 .Include(r => r.Promotor)
+                .Include(r => r.Empresa)
+                .Include(r => r.UsuarioRegistrador)
                 .FirstOrDefaultAsync(r => r.Id == id);
 
-            if (registro == null) return null;
-            return MapearParaResponse(registro, registro.Promotor.Nome);
+            if (registro == null)
+                return null;
+
+            return MapearParaResponse(registro);
         }
 
-        private RegistroAcessoResponse MapearParaResponse(RegistroAcesso registro, string promotorNome)
+        private async Task<RegistroResponse> MapearParaResponseAsync(int registroId)
         {
-            return new RegistroAcessoResponse
+            var registro = await _context.Registros
+                .Include(r => r.Promotor)
+                .Include(r => r.Empresa)
+                .Include(r => r.UsuarioRegistrador)
+                .FirstAsync(r => r.Id == registroId);
+
+            return MapearParaResponse(registro);
+        }
+
+        private RegistroResponse MapearParaResponse(Registro registro)
+        {
+            return new RegistroResponse
             {
                 Id = registro.Id,
-                Entrada = registro.Entrada,
-                Saida = registro.Saida,
-                TempoPermanenciaMinutos = registro.TempoPermanenciaMinutos,
                 PromotorId = registro.PromotorId,
-                PromotorNome = promotorNome
+                PromotorNome = registro.Promotor?.Nome ?? string.Empty,
+                EmpresaId = registro.EmpresaId,
+                EmpresaNome = registro.Empresa?.RazaoSocial ?? string.Empty,
+                Tipo = registro.Tipo,
+                DataHora = registro.DataHora,
+                PermanenciaMin = registro.PermanenciaMin,
+                RegistradoPor = registro.RegistradoPor,
+                NomeUsuario = registro.UsuarioRegistrador?.Nome ?? string.Empty,
+                Observacao = registro.Observacao
             };
         }
     }

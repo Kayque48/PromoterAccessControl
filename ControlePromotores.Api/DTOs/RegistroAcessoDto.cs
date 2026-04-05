@@ -1,34 +1,43 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace ControlePromotores.Api.DTOs
 {
     public class RegistrarEntradaRequest
     {
-        [Required]
         public int PromotorId { get; set; }
+        public int EmpresaId { get; set; }
+        public int UsuarioId { get; set; }
+        public string? Observacao { get; set; }
     }
 
     public class RegistrarSaidaRequest
     {
-        [Required]
-        public int RegistroId { get; set; }
-    }
-
-    public class RegistroAcessoResponse
-    {
-        public int Id { get; set; }
-        public DateTime Entrada { get; set; }
-        public DateTime? Saida { get; set; }
-        public int? TempoPermanenciaMinutos { get; set; }
         public int PromotorId { get; set; }
-        public string PromotorNome { get; set; }
+        public int EmpresaId { get; set; }
+        public int UsuarioId { get; set; }
+        public string? Observacao { get; set; }
     }
 
-    public class PromotorAtativoResponse
+    public class RegistroResponse
     {
         public int Id { get; set; }
-        public string Nome { get; set; }
-        public DateTime Entrada { get; set; }
-        public int MinutosAtendimento { get; set; }
+        public int PromotorId { get; set; }
+        public string PromotorNome { get; set; } = string.Empty;
+        public int EmpresaId { get; set; }
+        public string EmpresaNome { get; set; } = string.Empty;
+        public string Tipo { get; set; } = string.Empty;
+        public DateTime DataHora { get; set; }
+        public int? PermanenciaMin { get; set; }
+        public int RegistradoPor { get; set; }
+        public string NomeUsuario { get; set; } = string.Empty;
+        public string? Observacao { get; set; }
+    }
+
+    public class PromotorAtivoResponse
+    {
+        public int PromotorId { get; set; }
+        public string PromotorNome { get; set; } = string.Empty;
+        public int EmpresaId { get; set; }
+        public string EmpresaNome { get; set; } = string.Empty;
+        public DateTime EntradaEm { get; set; }
+        public int MinutosEmAtendimento { get; set; }
     }
 }

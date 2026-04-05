@@ -5,6 +5,11 @@ using ControlePromotores.Api.DTOs;
 
 namespace ControlePromotores.Api.Services
 {
+    /// <summary>
+    /// Serviço de gestão de empresas/clientes com CRUD completo.
+    /// Implementa soft delete via campo Ativo (não remove registros fisicamente).
+    /// Garante unicidade de CNPJ (identificador nacional) e email.
+    /// </summary>
     public class EmpresaService
     {
         private readonly PromotoresContext _context;
@@ -14,7 +19,7 @@ namespace ControlePromotores.Api.Services
             _context = context;
         }
 
-        public async Task<EmpresaResponse> GetByIdAsync(int id)
+        public async Task<EmpresaResponse?> GetByIdAsync(int id)
         {
             var empresa = await _context.Empresas.FindAsync(id);
             if (empresa == null) return null;
@@ -23,6 +28,8 @@ namespace ControlePromotores.Api.Services
 
         public async Task<List<EmpresaResponse>> GetAllAsync()
         {
+            // Filtra apenas empresas ativas (soft delete): Ativo == true.
+            // Empresas desativas permanecem no banco para auditoria de histórico.
             var empresas = await _context.Empresas
                 .Where(e => e.Ativo)
                 .ToListAsync();
@@ -39,18 +46,11 @@ namespace ControlePromotores.Api.Services
             {
                 CNPJ = request.CNPJ,
                 RazaoSocial = request.RazaoSocial,
-                NomeFantasia = request.NomeFantasia,
+                NomeFantasia = request.NomeFantasia ?? string.Empty,
                 Telefone = request.Telefone,
                 Email = request.Email,
                 Endereco = request.Endereco,
-                Numero = request.Numero,
-                Complemento = request.Complemento,
-                Bairro = request.Bairro,
-                Cidade = request.Cidade,
-                Estado = request.Estado,
-                CEP = request.CEP,
-                Ativo = true,
-                DataCriacao = DateTime.UtcNow
+                Ativo = true
             };
 
             _context.Empresas.Add(empresa);
@@ -69,16 +69,11 @@ namespace ControlePromotores.Api.Services
 
             empresa.CNPJ = request.CNPJ;
             empresa.RazaoSocial = request.RazaoSocial;
-            empresa.NomeFantasia = request.NomeFantasia;
+            empresa.NomeFantasia = request.NomeFantasia ?? string.Empty;
             empresa.Telefone = request.Telefone;
             empresa.Email = request.Email;
             empresa.Endereco = request.Endereco;
-            empresa.Numero = request.Numero;
-            empresa.Complemento = request.Complemento;
-            empresa.Bairro = request.Bairro;
-            empresa.Cidade = request.Cidade;
-            empresa.Estado = request.Estado;
-            empresa.CEP = request.CEP;
+            empresa.AtualizadoEm = DateTime.UtcNow;
 
             _context.Empresas.Update(empresa);
             await _context.SaveChangesAsync();
@@ -107,13 +102,8 @@ namespace ControlePromotores.Api.Services
                 Telefone = empresa.Telefone,
                 Email = empresa.Email,
                 Endereco = empresa.Endereco,
-                Numero = empresa.Numero,
-                Complemento = empresa.Complemento,
-                Bairro = empresa.Bairro,
-                Cidade = empresa.Cidade,
-                Estado = empresa.Estado,
-                CEP = empresa.CEP,
-                DataCriacao = empresa.DataCriacao,
+                CriadoEm = empresa.CriadoEm,
+                AtualizadoEm = empresa.AtualizadoEm,
                 Ativo = empresa.Ativo
             };
         }

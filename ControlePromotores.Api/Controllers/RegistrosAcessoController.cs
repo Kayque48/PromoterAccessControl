@@ -21,14 +21,18 @@ namespace ControlePromotores.Api.Controllers
         /// Registra entrada de um promotor
         /// </summary>
         [HttpPost("entrada")]
-        public async Task<ActionResult<RegistroAcessoResponse>> RegistrarEntrada([FromBody] RegistrarEntradaRequest request)
+        public async Task<ActionResult<RegistroResponse>> RegistrarEntrada([FromBody] RegistrarEntradaRequest request)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var registro = await _registroService.RegistrarEntradaAsync(request.PromotorId);
+                var registro = await _registroService.RegistrarEntradaAsync(
+                    request.PromotorId,
+                    request.EmpresaId,
+                    request.UsuarioId,
+                    request.Observacao);
                 return CreatedAtAction(nameof(GetById), new { id = registro.Id }, registro);
             }
             catch (KeyNotFoundException ex)
@@ -49,14 +53,18 @@ namespace ControlePromotores.Api.Controllers
         /// Registra saída de um promotor
         /// </summary>
         [HttpPost("saida")]
-        public async Task<ActionResult<RegistroAcessoResponse>> RegistrarSaida([FromBody] RegistrarSaidaRequest request)
+        public async Task<ActionResult<RegistroResponse>> RegistrarSaida([FromBody] RegistrarSaidaRequest request)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var registro = await _registroService.RegistrarSaidaAsync(request.RegistroId);
+                var registro = await _registroService.RegistrarSaidaAsync(
+                    request.PromotorId,
+                    request.EmpresaId,
+                    request.UsuarioId,
+                    request.Observacao);
                 return Ok(registro);
             }
             catch (KeyNotFoundException ex)
@@ -77,7 +85,7 @@ namespace ControlePromotores.Api.Controllers
         /// Obtém lista de promotores ativos (sem saída)
         /// </summary>
         [HttpGet("ativos")]
-        public async Task<ActionResult<List<PromotorAtativoResponse>>> GetPromotoresAtivos()
+        public async Task<ActionResult<List<PromotorAtivoResponse>>> GetPromotoresAtivos()
         {
             try
             {
@@ -94,7 +102,7 @@ namespace ControlePromotores.Api.Controllers
         /// Obtém registros de um promotor
         /// </summary>
         [HttpGet("promotor/{promotorId}")]
-        public async Task<ActionResult<List<RegistroAcessoResponse>>> GetRegistrosByPromotor(
+        public async Task<ActionResult<List<RegistroResponse>>> GetRegistrosByPromotor(
             int promotorId,
             [FromQuery] DateTime? dataInicio = null,
             [FromQuery] DateTime? dataFim = null)
@@ -114,7 +122,7 @@ namespace ControlePromotores.Api.Controllers
         /// Obtém registros de uma empresa
         /// </summary>
         [HttpGet("empresa/{empresaId}")]
-        public async Task<ActionResult<List<RegistroAcessoResponse>>> GetRegistrosByEmpresa(
+        public async Task<ActionResult<List<RegistroResponse>>> GetRegistrosByEmpresa(
             int empresaId,
             [FromQuery] DateTime? dataInicio = null,
             [FromQuery] DateTime? dataFim = null)
@@ -134,7 +142,7 @@ namespace ControlePromotores.Api.Controllers
         /// Obtém um registro por ID
         /// </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<RegistroAcessoResponse>> GetById(int id)
+        public async Task<ActionResult<RegistroResponse>> GetById(int id)
         {
             try
             {

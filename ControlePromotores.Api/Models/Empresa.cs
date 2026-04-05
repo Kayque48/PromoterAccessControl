@@ -8,49 +8,38 @@ namespace ControlePromotores.Api.Models
         public int Id { get; set; }
 
         [Required]
-        [StringLength(18)]
+        [StringLength(14)]
         public string CNPJ { get; set; }
 
         [Required]
         [StringLength(150)]
         public string RazaoSocial { get; set; }
 
-        [Required]
         [StringLength(150)]
         public string NomeFantasia { get; set; }
 
+        [Required]
         [StringLength(20)]
         public string Telefone { get; set; }
 
-        [StringLength(100)]
+        [Required]
+        [StringLength(150)]
         public string Email { get; set; }
 
-        [StringLength(300)]
+        [Required]
+        [StringLength(255)]
         public string Endereco { get; set; }
-
-        [StringLength(50)]
-        public string Numero { get; set; }
-
-        [StringLength(100)]
-        public string Complemento { get; set; }
-
-        [StringLength(50)]
-        public string Bairro { get; set; }
-
-        [StringLength(50)]
-        public string Cidade { get; set; }
-
-        [StringLength(2)]
-        public string Estado { get; set; }
-
-        [StringLength(10)]
-        public string CEP { get; set; }
-
-        public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 
         public bool Ativo { get; set; } = true;
 
-        // Relacionamento com Promotores
-        public ICollection<Promotor> Promotores { get; set; } = new List<Promotor>();
+        public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+
+        public DateTime AtualizadoEm { get; set; } = DateTime.UtcNow;
+
+        // Relacionamentos
+        public ICollection<Promotor> PromotoresExclusivos { get; set; } = new List<Promotor>();
+        public ICollection<PromotorEmpresa> PromotorEmpresas { get; set; } = new List<PromotorEmpresa>();
+        public ICollection<Registro> Registros { get; set; } = new List<Registro>();
+        public ICollection<PromotorDocumento> PromotorDocumentos { get; set; } = new List<PromotorDocumento>();
     }
 }

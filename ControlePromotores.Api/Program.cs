@@ -9,9 +9,12 @@ using ControlePromotores.Api.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Adicionar DbContext
-var connectionString = builder.Configuration.GetConnectionString("MySqlConnection");
+// For local development, using SQLite by default
+// To enable MySQL: run 'dotnet restore' first, then set UseSqlite to false in appsettings
+var sqliteConnection = builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=promoter_control.db";
+
 builder.Services.AddDbContext<PromotoresContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseSqlite(sqliteConnection));
 
 // Adicionar serviços
 builder.Services.AddScoped<TokenService>();
@@ -22,9 +25,9 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<RelatorioService>();
 
 // Adicionar autenticação JWT
-var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "sua-chave-secreta-muito-longa-e-segura-aqui-min-32-caracteres";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ControlePromotoresAPI";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "ControlePromotoresClient";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

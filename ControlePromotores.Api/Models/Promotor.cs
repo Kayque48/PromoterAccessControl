@@ -8,51 +8,36 @@ namespace ControlePromotores.Api.Models
         public int Id { get; set; }
 
         [Required]
-        [StringLength(100)]
-        public string Nome { get; set; }
+        [StringLength(11)]
+        public string CPF { get; set; }
 
         [Required]
-        [StringLength(14)]
-        public string CPF { get; set; }
+        [StringLength(100)]
+        public string Nome { get; set; }
 
         [StringLength(20)]
         public string Telefone { get; set; }
 
-        [StringLength(100)]
+        [StringLength(150)]
         public string Email { get; set; }
 
-        [StringLength(300)]
-        public string Endereco { get; set; }
+        [Required]
+        [StringLength(20)] // "promotor" ou "exclusivo"
+        public string Tipo { get; set; } = "promotor";
 
-        [StringLength(50)]
-        public string Numero { get; set; }
-
-        [StringLength(100)]
-        public string Complemento { get; set; }
-
-        [StringLength(50)]
-        public string Bairro { get; set; }
-
-        [StringLength(50)]
-        public string Cidade { get; set; }
-
-        [StringLength(2)]
-        public string Estado { get; set; }
-
-        [StringLength(10)]
-        public string CEP { get; set; }
-
-        public DateTime DataContratacao { get; set; } = DateTime.UtcNow;
+        // Para promotor exclusivo
+        public int? EmpresaExclusivaId { get; set; }
+        public Empresa EmpresaExclusiva { get; set; }
 
         public bool Ativo { get; set; } = true;
 
-        // Relacionamento com Empresa
-        [Required]
-        public int EmpresaId { get; set; }
+        public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
 
-        public Empresa Empresa { get; set; }
+        public DateTime AtualizadoEm { get; set; } = DateTime.UtcNow;
 
-        // Relacionamento com Registros de Acesso
-        public ICollection<RegistroAcesso> Registros { get; set; } = new List<RegistroAcesso>();
+        // Relacionamentos
+        public ICollection<PromotorEmpresa> PromotorEmpresas { get; set; } = new List<PromotorEmpresa>();
+        public ICollection<Registro> Registros { get; set; } = new List<Registro>();
+        public ICollection<PromotorDocumento> PromotorDocumentos { get; set; } = new List<PromotorDocumento>();
     }
 }

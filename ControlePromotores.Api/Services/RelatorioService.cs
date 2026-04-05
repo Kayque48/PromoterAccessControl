@@ -5,6 +5,11 @@ using ControlePromotores.Api.DTOs;
 
 namespace ControlePromotores.Api.Services
 {
+    /// <summary>
+    /// Serviço de relatórios com filtragem por período, empresa e promotor.
+    /// Suporta exportação em CSV para análise em ferramentas externas (Excel, Power BI).
+    /// Agregações: total de visitas, permanência média, e contagem de promotores/empresas únicos.
+    /// </summary>
     public class RelatorioService
     {
         private readonly PromotoresContext _context;
@@ -16,14 +21,18 @@ namespace ControlePromotores.Api.Services
 
         public async Task<RelatorioAgregadoResponse> GetRelatorioAgregadoAsync(FiltroRelatorioRequest filtro)
         {
-            var query = _context.RegistrosAcesso
+            // Query base: Filtra por período (DataInicio-DataFim) e tipo entrada (exclui saídas).
+            // Relaciona Promotor e Empresa para dados de nome/empresa no relatório.
+            var query = _context.Registros
                 .Include(r => r.Promotor)
-                .ThenInclude(p => p.Empresa)
-                .Where(r => r.Entrada >= filtro.DataInicio && r.Entrada <= filtro.DataFim);
+                .Include(r => r.Empresa)
+                .Where(r => r.DataHora >= filtro.DataInicio && r.DataHora <= filtro.DataFim && r.Tipo == "entrada");
 
+            // Filtros opcionais: Permitem drill-down por empresa específica ou promotor específico.
+            // Caso base (null): Retorna relatório consolidado para todo o período/sistema.
             if (filtro.EmpresaId.HasValue)
             {
-                query = query.Where(r => r.Promotor.EmpresaId == filtro.EmpresaId.Value);
+                query = query.Where(r => r.EmpresaId == filtro.EmpresaId.Value);
             }
 
             if (filtro.PromotorId.HasValue)
@@ -36,14 +45,14 @@ namespace ControlePromotores.Api.Services
             {
                 Id = r.Id,
                 PromotorNome = r.Promotor.Nome,
-                EmpresaNome = r.Promotor.Empresa.NomeFantasia,
-                Entrada = r.Entrada,
-                Saida = r.Saida,
-                DuracaoMinutos = r.TempoPermanenciaMinutos
+                EmpresaNome = r.Empresa.NomeFantasia ?? r.Empresa.RazaoSocial,
+                Entrada = r.DataHora,
+                Saida = null, // TODO: Implementar lógica para encontrar saída correspondente
+                DuracaoMinutos = null
             }).ToList();
 
-            var totalMinutos = registros.Where(r => r.TempoPermanenciaMinutos.HasValue).Sum(r => r.TempoPermanenciaMinutos);
-            var countComDuracao = registros.Count(r => r.TempoPermanenciaMinutos.HasValue);
+            var totalMinutos = registros.Where(r => r.PermanenciaMin.HasValue).Sum(r => r.PermanenciaMin) ?? 0;
+            var countComDuracao = registros.Count(r => r.PermanenciaMin.HasValue);
             var mediaMinutos = countComDuracao > 0 ? (decimal)totalMinutos / countComDuracao : 0;
 
             return new RelatorioAgregadoResponse
@@ -51,7 +60,7 @@ namespace ControlePromotores.Api.Services
                 TotalRegistros = registros.Count,
                 DuracaoMediaMinutos = mediaMinutos,
                 PromotoresUnicos = registros.Select(r => r.PromotorId).Distinct().Count(),
-                EmpresasUnicos = registros.Select(r => r.Promotor.EmpresaId).Distinct().Count(),
+                EmpresasUnicos = registros.Select(r => r.EmpresaId).Distinct().Count(),
                 Registros = registrosResponse
             };
         }
@@ -78,11 +87,14 @@ namespace ControlePromotores.Api.Services
             sb.AppendLine("Id,Promotor,Empresa,Entrada,Saída,Duração (minutos)");
 
             // Dados
-            foreach (var registro in relatorio.Registros)
+            if (relatorio.Registros != null)
             {
-                var saida = registro.Saida?.ToString("yyyy-MM-dd HH:mm:ss") ?? "";
-                sb.AppendLine($"{registro.Id},\"{registro.PromotorNome}\",\"{registro.EmpresaNome}\"," +
-                    $"{registro.Entrada:yyyy-MM-dd HH:mm:ss},{saida},{registro.DuracaoMinutos ?? 0}");
+                foreach (var registro in relatorio.Registros)
+                {
+                    var saida = registro.Saida?.ToString("yyyy-MM-dd HH:mm:ss") ?? "";
+                    sb.AppendLine($"{registro.Id},\"{registro.PromotorNome}\",\"{registro.EmpresaNome}\"," +
+                        $"{registro.Entrada:yyyy-MM-dd HH:mm:ss},{saida},{registro.DuracaoMinutos ?? 0}");
+                }
             }
 
             // Resumo

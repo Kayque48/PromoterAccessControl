@@ -5,6 +5,12 @@ using ControlePromotores.Api.DTOs;
 
 namespace ControlePromotores.Api.Services
 {
+    /// <summary>
+    /// Serviço de gestão de promotores com suporte a dois modelos de alocação:
+    /// 1. Promotor genérico: Trabalha para múltiplas empresas (relacionamento N:N via PromotorEmpresa).
+    /// 2. Promotor exclusivo: Vinculado a uma única empresa (EmpresaExclusivaId).
+    /// Garante unicidade de CPF e implementa soft delete para manutenção de histórico.
+    /// </summary>
     public class PromotorService
     {
         private readonly PromotoresContext _context;
@@ -14,12 +20,12 @@ namespace ControlePromotores.Api.Services
             _context = context;
         }
 
-        public async Task<PromotorResponse> GetByIdAsync(int id)
+        public async Task<PromotorResponse?> GetByIdAsync(int id)
         {
             var promotor = await _context.Promotores
-                .Include(p => p.Empresa)
+                .Include(p => p.EmpresaExclusiva)
                 .FirstOrDefaultAsync(p => p.Id == id);
-            
+
             if (promotor == null) return null;
             return MapearParaResponse(promotor);
         }
@@ -27,11 +33,13 @@ namespace ControlePromotores.Api.Services
         public async Task<List<PromotorResponse>> GetAllAsync(int? empresaId = null)
         {
             var query = _context.Promotores
-                .Include(p => p.Empresa)
+                .Include(p => p.EmpresaExclusiva)
                 .Where(p => p.Ativo);
 
+            // Filtro opcional: Se empresaId informado, retorna apenas promotores exclusivos daquela empresa.
+            // Caso base (null): Retorna todos os promotores genéricos + exclusivos (para backend/admin).
             if (empresaId.HasValue)
-                query = query.Where(p => p.EmpresaId == empresaId.Value);
+                query = query.Where(p => p.EmpresaExclusivaId == empresaId.Value);
 
             var promotores = await query.ToListAsync();
             return promotores.Select(MapearParaResponse).ToList();
@@ -39,12 +47,19 @@ namespace ControlePromotores.Api.Services
 
         public async Task<PromotorResponse> CreateAsync(CriarPromotorRequest request)
         {
-            // Verificar se empresa existe
-            var empresa = await _context.Empresas.FindAsync(request.EmpresaId);
-            if (empresa == null)
-                throw new KeyNotFoundException("Empresa não encontrada");
+            // Lógica de negócio: Tipo de promotor é determinado pela presença de EmpresaId no request.
+            // - Se EmpresaId > 0: Cria promotor exclusivo (Tipo="exclusivo", EmpresaExclusivaId preenchido).
+            // - Caso contrário: Cria promotor genérico (Tipo="promotor", sem empresa exclusiva).
+            Empresa? empresaExclusiva = null;
+            if (request.EmpresaId > 0)
+            {
+                empresaExclusiva = await _context.Empresas.FindAsync(request.EmpresaId);
+                if (empresaExclusiva == null)
+                    throw new KeyNotFoundException("Empresa não encontrada");
+            }
 
-            // Verificar CPF duplicado
+            // Validação de data: CPF é identificador único nacional brasileiro.
+            // Impede duplicação: Dois promotores não podem ter o mesmo CPF.
             if (await _context.Promotores.AnyAsync(p => p.CPF == request.CPF))
                 throw new InvalidOperationException("CPF já cadastrado");
 
@@ -52,24 +67,19 @@ namespace ControlePromotores.Api.Services
             {
                 Nome = request.Nome,
                 CPF = request.CPF,
-                Telefone = request.Telefone,
-                Email = request.Email,
-                Endereco = request.Endereco,
-                Numero = request.Numero,
-                Complemento = request.Complemento,
-                Bairro = request.Bairro,
-                Cidade = request.Cidade,
-                Estado = request.Estado,
-                CEP = request.CEP,
-                EmpresaId = request.EmpresaId,
-                Ativo = true,
-                DataContratacao = DateTime.UtcNow
+                Telefone = request.Telefone ?? null!,
+                Email = request.Email ?? null!,
+                Tipo = request.EmpresaId > 0 ? "exclusivo" : "promotor",
+                EmpresaExclusivaId = request.EmpresaId > 0 ? request.EmpresaId : null,
+                Ativo = true
             };
 
             _context.Promotores.Add(promotor);
             await _context.SaveChangesAsync();
 
-            promotor.Empresa = empresa;
+            if (empresaExclusiva != null)
+                promotor.EmpresaExclusiva = empresaExclusiva;
+
             return MapearParaResponse(promotor);
         }
 
@@ -78,10 +88,14 @@ namespace ControlePromotores.Api.Services
             var promotor = await _context.Promotores.FindAsync(id);
             if (promotor == null) throw new KeyNotFoundException("Promotor não encontrado");
 
-            // Verificar empresa
-            var empresa = await _context.Empresas.FindAsync(request.EmpresaId);
-            if (empresa == null)
-                throw new KeyNotFoundException("Empresa não encontrada");
+            // Se mudou para exclusivo, verificar empresa
+            Empresa? empresaExclusiva = null;
+            if (request.EmpresaId > 0)
+            {
+                empresaExclusiva = await _context.Empresas.FindAsync(request.EmpresaId);
+                if (empresaExclusiva == null)
+                    throw new KeyNotFoundException("Empresa não encontrada");
+            }
 
             // Verificar CPF duplicado
             if (promotor.CPF != request.CPF && await _context.Promotores.AnyAsync(p => p.CPF == request.CPF))
@@ -89,21 +103,18 @@ namespace ControlePromotores.Api.Services
 
             promotor.Nome = request.Nome;
             promotor.CPF = request.CPF;
-            promotor.Telefone = request.Telefone;
-            promotor.Email = request.Email;
-            promotor.Endereco = request.Endereco;
-            promotor.Numero = request.Numero;
-            promotor.Complemento = request.Complemento;
-            promotor.Bairro = request.Bairro;
-            promotor.Cidade = request.Cidade;
-            promotor.Estado = request.Estado;
-            promotor.CEP = request.CEP;
-            promotor.EmpresaId = request.EmpresaId;
+            promotor.Telefone = request.Telefone ?? promotor.Telefone;
+            promotor.Email = request.Email ?? promotor.Email;
+            promotor.Tipo = request.EmpresaId > 0 ? "exclusivo" : "promotor";
+            promotor.EmpresaExclusivaId = request.EmpresaId > 0 ? request.EmpresaId : null;
+            promotor.AtualizadoEm = DateTime.UtcNow;
 
             _context.Promotores.Update(promotor);
             await _context.SaveChangesAsync();
 
-            promotor.Empresa = empresa;
+            if (empresaExclusiva != null)
+                promotor.EmpresaExclusiva = empresaExclusiva;
+
             return MapearParaResponse(promotor);
         }
 
@@ -127,16 +138,11 @@ namespace ControlePromotores.Api.Services
                 CPF = promotor.CPF,
                 Telefone = promotor.Telefone,
                 Email = promotor.Email,
-                Endereco = promotor.Endereco,
-                Numero = promotor.Numero,
-                Complemento = promotor.Complemento,
-                Bairro = promotor.Bairro,
-                Cidade = promotor.Cidade,
-                Estado = promotor.Estado,
-                CEP = promotor.CEP,
-                DataContratacao = promotor.DataContratacao,
-                Ativo = promotor.Ativo,
-                EmpresaId = promotor.EmpresaId
+                Tipo = promotor.Tipo,
+                EmpresaExclusivaId = promotor.EmpresaExclusivaId,
+                CriadoEm = promotor.CriadoEm,
+                AtualizadoEm = promotor.AtualizadoEm,
+                Ativo = promotor.Ativo
             };
         }
     }
