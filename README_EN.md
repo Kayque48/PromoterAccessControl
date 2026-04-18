@@ -142,6 +142,108 @@ flowchart TD
 
 ---
 
+## API Usage Examples
+
+Below are basic examples of how to interact with the main endpoints of the system.
+
+---
+
+### Authentication
+
+```http
+POST /api/Auth/login
+```
+
+```json
+{
+  "login": "admin",
+  "senha": "admin123"
+}
+```
+
+Response:
+
+```json
+{
+  "token": "JWT_TOKEN_HERE"
+}
+```
+
+---
+
+### Entry Registration
+
+```http
+POST /api/RegistrosAcesso/entrada
+```
+
+```json
+{
+  "promotorId": 1,
+  "empresaId": 1,
+  "usuarioId": 1,
+  "observacao": "normal entry"
+}
+```
+
+Response:
+
+```json
+{
+  "id": 1,
+  "tipo": "entrada",
+  "dataHora": "2026-04-18T17:00:00",
+  "promotorId": 1,
+  "empresaId": 1
+}
+```
+
+---
+
+### Exit Registration
+
+```http
+POST /api/RegistrosAcesso/saida
+```
+
+```json
+{
+  "promotorId": 1,
+  "empresaId": 1,
+  "usuarioId": 1
+}
+```
+
+Response:
+
+```json
+{
+  "tipo": "saida",
+  "permanenciaMin": 120
+}
+```
+
+---
+
+### Dashboard (Daily Summary)
+
+```http
+GET /api/Dashboard/hoje
+```
+
+Response:
+
+```json
+{
+  "totalPromotoresAtivos": 1,
+  "totalVisitasHoje": 2,
+  "mediaHorasPorPromotor": 2,
+  "totalRegistrosUltimos30Dias": 10
+}
+```
+
+---
+
 ## Alignment Rules
 
 * The official database schema must be treated as the source of truth
