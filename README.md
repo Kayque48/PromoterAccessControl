@@ -1,300 +1,183 @@
-<<<<<<< HEAD
-# ControlePromotores.Api
-
 > 🇺🇸 [English Version](README_EN.md)
 
-API REST desenvolvida em **ASP.NET Core (.NET 10)** para controle de acesso de promotores em empresas. Permite registrar entrada e saída de promotores, gerenciar empresas e promotores, e autenticar usuários via **JWT**.
+# Controle de Promotores
+
+## Descrição
+
+Sistema desenvolvido para controle de acesso de promotores em empresas, permitindo o registro de entrada e saída, cálculo do tempo de permanência e visualização de métricas operacionais por meio de dashboard e relatórios.
+
+O projeto está sendo desenvolvido como parte de um Trabalho de Conclusão de Curso (TCC), com foco em organização, rastreabilidade e apoio à tomada de decisão.
 
 ---
 
 ## Objetivo
 
-O ControlePromotores.Api tem como objetivo fornecer uma solução centralizada para o controle de acesso e monitoramento de promotores vinculados a empresas. O sistema permite registrar e validar o cadastro de empresas e promotores, controlar as movimentações de entrada e saída com rastreabilidade completa, e garantir que apenas promotores autorizados realizem registros nos dias permitidos.
-Por meio de autenticação segura com JWT e controle de perfis de acesso, o sistema assegura que cada usuário opere apenas dentro das funcionalidades permitidas ao seu nível de permissão. Além disso, disponibiliza um dashboard com informações consolidadas sobre a presença e o histórico de movimentações dos promotores, oferecendo uma visão gerencial em tempo real para os administradores.
-A solução foi desenvolvida com foco em integridade dos dados, segurança das informações e escalabilidade, utilizando tecnologias modernas como ASP.NET Core, Entity Framework Core e MySQL, sendo capaz de atender empresas de diferentes portes que necessitem de controle eficiente sobre a atuação de seus promotores em campo.
+Centralizar o controle de presença de promotores, substituindo processos manuais por uma solução digital que permita:
 
+* Registro estruturado de acessos
+* Monitoramento em tempo real de promotores ativos
+* Cálculo automático de permanência
+* Geração de dados para análise gerencial
 
-## Tecnologias
+---
 
-| Pacote | Versão |
-|--------|--------|
-| .NET | 10.0 |
-| Entity Framework Core | 10.0.3 |
-| Pomelo EF Core MySQL | 9.0.0 |
-| ASP.NET Authentication JwtBearer | 10.0.3 |
-| System.IdentityModel.Tokens.Jwt | 8.16.0 |
-| BCrypt.Net-Next | 4.1.0 |
+## Tecnologias Utilizadas
+
+### Backend
+
+* ASP.NET Core Web API
+* Entity Framework Core
+* Autenticação via JWT
+
+### Banco de Dados
+
+* MySQL (estrutura oficial do projeto)
+* SQLite (utilizado para desenvolvimento local)
+
+### Frontend
+
+* HTML
+* CSS
+* JavaScript
+
+---
+
+## Arquitetura
+
+O sistema está dividido em três camadas principais:
+
+* **Backend:** responsável pelas regras de negócio, autenticação e exposição da API
+* **Frontend:** responsável pela interface e consumo dos endpoints
+* **Banco de Dados:** responsável pela persistência e estrutura dos dados
+
+```mermaid
+flowchart LR
+    A[Frontend] --> B[Backend API]
+    B --> C[(Banco de Dados)]
+```
 
 ---
 
 ## Estrutura do Projeto
 
-```
+```text
 ControlePromotores.Api/
-├── BD/
-│   └── PromotoresContext.cs       # DbContext e configuração dos relacionamentos
-├── Controllers/
-│   ├── ControladorAuticacao.cs    # Autenticação e geração de token JWT
-│   ├── ControladorPromotores.cs   # CRUD de promotores
-│   └── ControladorRegistros.cs    # Registro de entrada e saída
-├── Models/
-│   ├── Empresa.cs                 # Entidade Empresa
-│   ├── Promotor.cs                # Entidade Promotor
-│   ├── RegistroAcesso.cs          # Entidade de registro de ponto
-│   ├── Usuario.cs                 # Entidade de usuário do sistema
-│   └── LoginModel.cs              # DTO de login
-├── Services/
-│   └── TokenService.cs            # Geração de token JWT
-├── appsettings.json
-└── Program.cs
+│
+├── Controllers/   # Endpoints da API
+├── Services/      # Regras de negócio
+├── Models/        # Entidades do sistema
+├── DTOs/          # Contratos de entrada/saída
+├── BD/            # DbContext
+├── Data/          # Inicialização de dados
+├── Program.cs     # Configuração da aplicação
 ```
 
 ---
 
-## Entidades e Relacionamentos
+## Funcionalidades
 
-```
-Empresa (1) ──── (N) Promotor (1) ──── (N) RegistroAcesso
-```
-
-- Uma **Empresa** possui vários **Promotores**
-- Um **Promotor** possui vários **RegistrosAcesso**
-- **Usuario** é independente — representa quem opera o sistema
-
----
-
-## Endpoints
-
-### Autenticação
-
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `POST` | `/api/auth/login` | Realiza login e retorna o token JWT |
-
-**Body:**
-```json
-{
-  "login": "admin",
-  "senha": "senha123"
-}
-```
-
-**Resposta:**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIs..."
-}
-```
+* Autenticação de usuários (JWT)
+* Cadastro de empresas
+* Cadastro de promotores
+* Registro de entrada
+* Registro de saída
+* Cálculo automático de permanência
+* Consulta de promotores ativos
+* Dashboard com métricas operacionais
+* Geração de relatórios
 
 ---
 
-### Promotores `🔒 Requer autenticação`
+## Execução do Projeto
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `GET` | `/api/promotores` | Lista todos os promotores |
-| `GET` | `/api/promotores?empresaId=1` | Lista promotores filtrados por empresa |
-| `POST` | `/api/promotores` | Cria um novo promotor |
+### Backend
 
----
-
-### Registros de Acesso `🔒 Requer autenticação`
-
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| `POST` | `/api/registros/entrada` | Registra entrada de um promotor |
-| `PUT` | `/api/registros/saida/{id}` | Registra saída e calcula tempo de permanência |
-| `GET` | `/api/registros/promotor/{promotorId}` | Lista registros de um promotor |
-
----
-
-## Configuração
-
-### appsettings.json
-
-Adicione a string de conexão com o banco e o segredo JWT:
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=controle_promotores;User=root;Password=suasenha;"
-  },
-  "Jwt": {
-    "Secret": "sua_chave_secreta_aqui_minimo_32_caracteres"
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*"
-}
-```
-
----
-
-### Program.cs
-
-O `Program.cs` precisa ser configurado com os serviços necessários:
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllers();
-builder.Services.AddScoped<TokenService>();
-
-// Entity Framework + MySQL
-builder.Services.AddDbContext<PromotoresContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
-    ));
-
-// JWT
-var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Secret"]);
-builder.Services.AddAuthentication(x =>
-{
-    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(x =>
-{
-    x.RequireHttpsMetadata = false;
-    x.SaveToken = true;
-    x.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = false,
-        ValidateAudience = false
-    };
-});
-
-var app = builder.Build();
-
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
-
-app.Run();
-```
-
----
-
-## Como Rodar
-
-**1. Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/ControlePromotores.Api.git
-cd ControlePromotores.Api
-```
-
-**2. Configure o banco de dados** no `appsettings.json` conforme mostrado acima.
-
-**3. Execute as migrations**
-```bash
-dotnet ef migrations add InitialCreate
-dotnet ef database update
-```
-
-**4. Rode a aplicação**
-```bash
+dotnet restore
 dotnet run
 ```
 
 A API estará disponível em:
-- HTTP: `http://localhost:5297`
-- HTTPS: `https://localhost:7272`
+
+```text
+http://localhost:5297
+```
+
+Documentação via Swagger:
+
+```text
+http://localhost:5297/swagger
+```
 
 ---
 
-## Problemas Conhecidos
+## Comunicação com a API
 
-> O projeto ainda contém bugs que impedem a compilação. Antes de rodar, corrija os seguintes pontos:
+### Base URL
 
-- `[httpGet]` → `[HttpGet]` em `ControladorPromotores.cs`
-- Bloco de código solto fora de método em `ControladorAuticacao.cs`
-- `[required]` → `[Required]` em `LoginModel.cs`
-- `System.componentModel` → `System.ComponentModel` em `Promotor.cs`
-- `AppDbContext` → `PromotoresContext` em `ControladorRegistros.cs`
-- Query com `.include` e `.Asqueryable()` fora de contexto em `ControladorPromotores.cs`
-- `Program.cs` não registra nenhum serviço — ver seção de configuração acima
+```text
+http://localhost:5297/api
+```
+
+### Autenticação
+
+Endpoints protegidos requerem token JWT:
+
+```http
+Authorization: Bearer {token}
+```
 
 ---
 
-## Licença
+## Fluxo Básico
 
-Este projeto está sob a licença MIT.
-=======
-# Controle de Promotores
+```mermaid
+flowchart TD
+    A[Login] --> B[Cadastro de empresa]
+    B --> C[Cadastro de promotor]
+    C --> D[Registro de entrada]
+    D --> E[Registro de saída]
+    E --> F[Dashboard]
+```
 
-Sistema para controle de entrada/saída de promotores em empresas, com dashboard, relatórios e exportação.
+---
 
-## Funcionalidades implementadas
+## Regras de Alinhamento
 
-- Autenticação via JWT
-- Cadastro/edição/desativação de promotores
-- Cadastro de empresas e listagem de promotores por empresa
-- Registro de ponto (entrada/saída) com validação de dias permitidos
-- Dashboard com indicadores e gráficos:
-  - Visitas por dia da semana
-  - Tempo médio por empresa
-  - Distribuição por empresa
-- Relatórios com filtros por data, empresa, promotor e busca por nome
-- Exportação para CSV do histórico gerado
-- Verificação de dia correto de visita baseado em dias autorizados por promotor
-- Gestão de Empresas com CNPJ/razão social/nome fantasia, telefone e email corporativo
-- Cadastro de Promotores com CPF, categoria, CEP/ViaCEP, logradouro/numero/complemento, dias permitidos, telefone/email
-- Busca de endereço automático via ViaCEP (CEP -> logradouro)
-- Validação de formulário com feedback visual de erro (is-invalid / invalid-feedback) e Focus acessível
-- Melhorias UX: cartas/inputs mais espaçados, modal maior, contraste AAA, navegação por teclado, labels/accessibilidade
+* O banco de dados oficial deve ser considerado a fonte de verdade
+* Alterações estruturais devem ser alinhadas entre os membros do grupo
+* O backend deve refletir a estrutura do banco
+* O frontend deve consumir os endpoints existentes
 
-## Estrutura de arquivos
+---
 
-- `frontend/` - páginas e scripts do front-end (HTML/CSS/JS)
-- `Controladores/` - APIs do back-end (ASP.NET Core)
-- `Models/` - classes de modelo (Promotor, Empresa, RegistroAcesso)
-- `BD/` - contexto EF Core
+## Ambiente de Desenvolvimento
 
-## Como executar
+* SQLite utilizado para desenvolvimento local
+* MySQL utilizado como base oficial do projeto
 
-1. Certifique-se de ter .NET 10 SDK instalado.
-2. Abra o terminal na pasta do projeto:
-   ```bash
-   cd d:\ControlePromotores.Api
-   ```
-3. Restaure dependências:
-   ```bash
-   dotnet restore
-   ```
-4. Execute a aplicação:
-   ```bash
-   dotnet run --project ControlePromotores.Api.csproj
-   ```
-5. Abra no navegador `http://localhost:5000` (ou porta mostrada no terminal).
+---
 
-## Arquivos modificados recentemente
+## Segurança
 
-- `frontend/Dashboard.html`
-- `frontend/js/dashboard.js`
-- `frontend/Promotores.html`
-- `frontend/js/promotores.js`
-- `frontend/Registro-ponto.html`
-- `frontend/js/registro-ponto.js`
-- `frontend/Relatorios.html`
-- `frontend/js/relatorios.js`
-- `frontend/Exportar.html`
-- `frontend/js/exportar.js`
-- `Controladores/DashboardController.cs`
-- `Controladores/ControladorPromotores.cs`
-- `Controladores/ControladorRegistros.cs`
-- `Models/Promotor.cs`
+Este repositório não deve conter:
 
-## Push para GitHub
+* Credenciais de banco de dados
+* Tokens ou chaves reais
+* Informações sensíveis em arquivos de configuração
 
-```bash
-git add .
-git commit -m "Atualiza projeto: dashboard, promotores, registros e exportação"
+Utilizar variáveis de ambiente ou arquivos locais não versionados quando necessário.
+
+---
+
+## Status do Projeto
+
+* Backend implementado e funcional
+* Autenticação JWT ativa
+* Registro de acessos operacional
+* Dashboard funcional
+
+Integração com frontend em andamento.
 git pull origin main --rebase
 git push origin main
 ```
