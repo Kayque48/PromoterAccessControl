@@ -142,6 +142,108 @@ flowchart TD
 
 ---
 
+## Exemplos de Uso da API
+
+Abaixo estão exemplos básicos de utilização dos principais endpoints do sistema.
+
+---
+
+### Autenticação
+
+```http
+POST /api/Auth/login
+```
+
+```json
+{
+  "login": "admin",
+  "senha": "admin123"
+}
+```
+
+Resposta:
+
+```json
+{
+  "token": "JWT_TOKEN_AQUI"
+}
+```
+
+---
+
+### Registro de Entrada
+
+```http
+POST /api/RegistrosAcesso/entrada
+```
+
+```json
+{
+  "promotorId": 1,
+  "empresaId": 1,
+  "usuarioId": 1,
+  "observacao": "entrada normal"
+}
+```
+
+Resposta:
+
+```json
+{
+  "id": 1,
+  "tipo": "entrada",
+  "dataHora": "2026-04-18T17:00:00",
+  "promotorId": 1,
+  "empresaId": 1
+}
+```
+
+---
+
+### Registro de Saída
+
+```http
+POST /api/RegistrosAcesso/saida
+```
+
+```json
+{
+  "promotorId": 1,
+  "empresaId": 1,
+  "usuarioId": 1
+}
+```
+
+Resposta:
+
+```json
+{
+  "tipo": "saida",
+  "permanenciaMin": 120
+}
+```
+
+---
+
+### Dashboard (Resumo do Dia)
+
+```http
+GET /api/Dashboard/hoje
+```
+
+Resposta:
+
+```json
+{
+  "totalPromotoresAtivos": 1,
+  "totalVisitasHoje": 2,
+  "mediaHorasPorPromotor": 2,
+  "totalRegistrosUltimos30Dias": 10
+}
+```
+
+---
+
 ## Regras de Alinhamento
 
 * O banco de dados oficial deve ser considerado a fonte de verdade
