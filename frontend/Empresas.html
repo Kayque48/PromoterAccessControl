@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empresas - Controle de Promotores</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/empresas.css">
+</head>
+<body class="dashboard-page">
+    <div class="dashboard-shell d-flex min-vh-100">
+        <aside class="sidebar">
+            <div class="p-4">
+                <div class="mb-4">
+                    <img src="img/Logo2.png" alt="Logo" class="logo">
+                    <h4 class="mb-1">CKM Generation</h4>
+                    <small>Painel de Controle</small>
+                </div>
+                <ul class="nav flex-column">
+                    <li class="nav-item"><a class="nav-link" href="dashboard.html"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="registro-ponto.html"><i class="bi bi-clock-history me-2"></i>Controle de Ponto</a></li>
+                    <li class="nav-item"><a class="nav-link" href="promotores.html"><i class="bi bi-people me-2"></i>Promotores</a></li>
+                    <li class="nav-item"><a class="nav-link" href="relatorios.html"><i class="bi bi-bar-chart-line me-2"></i>Histórico</a></li>
+                    <li class="nav-item"><a class="nav-link" href="exportar.html"><i class="bi bi-download me-2"></i>Exportar</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="empresas.html"><i class="bi bi-building me-2"></i>Empresas</a></li>
+                </ul>
+            </div>
+            <div class="p-4">
+                <button class="btn btn-outline-secondary w-100" id="btnLogout">Sair</button>
+            </div>
+        </aside>
+
+        <main role="main" class="flex-fill dashboard-main p-4">
+            <header class="dashboard-header d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+                <div>
+                    <h2 class="mb-1"><i class="bi bi-building me-2 text-info"></i>Empresas</h2>
+                    <p class="mb-0">Cadastro e atualização de empresas (somente gestores)</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge-soft">Gestor</span>
+                </div>
+            </header>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Nova Empresa</h5>
+                    <form id="formEmpresa">
+                        <input type="hidden" id="empresaId" value="">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="cnpj" class="form-label">CNPJ</label>
+                                <input type="text" class="form-control" id="cnpj" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="razaoSocial" class="form-label">Razão Social</label>
+                                <input type="text" class="form-control" id="razaoSocial" readonly>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="nomeFantasia" class="form-label">Nome Fantasia</label>
+                                <input type="text" class="form-control" id="nomeFantasia">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="telefoneEmpresa" class="form-label">Telefone</label>
+                                <input type="text" class="form-control" id="telefoneEmpresa" placeholder="(XX) XXXXX-XXXX">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="emailEmpresa" class="form-label">Email Corporativo</label>
+                                <input type="email" class="form-control" id="emailEmpresa" placeholder="nome@empresa.com">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="cepEmpresa" class="form-label">CEP</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="cepEmpresa" placeholder="00000-000" maxlength="9" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="logradouroEmpresa" class="form-label">Rua</label>
+                                <input type="text" class="form-control" id="logradouroEmpresa" placeholder="Rua/Avenida" readonly>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="cidadeEmpresa" class="form-label">Cidade</label>
+                                <input type="text" class="form-control" id="cidadeEmpresa" placeholder="Cidade" readonly>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="estadoEmpresa" class="form-label">Estado</label>
+                                <input type="text" class="form-control" id="estadoEmpresa" placeholder="Estado" readonly>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="numeroEmpresa" class="form-label">Número</label>
+                                <input type="text" class="form-control" id="numeroEmpresa" placeholder="Número">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="complementoEmpresa" class="form-label">Complemento</label>
+                                <input type="text" class="form-control" id="complementoEmpresa" placeholder="Apto, bloco, etc.">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary" id="btnSalvarEmpresa" aria-label="Salvar empresa">Salvar</button>
+                            <button type="button" class="btn btn-secondary" id="btnCancelarEmpresa" aria-label="Cancelar cadastro de empresa">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Lista de Empresas</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <input type="text" id="filtroEmpresa" class="form-control" placeholder="Buscar empresa por nome...">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="tabelaEmpresas">
+                            <thead>
+                                <tr>
+                                    <th>CNPJ</th>
+                                    <th>Razão Social</th>
+                                    <th>Nome Fantasia</th>
+                                    <th>Telefone</th>
+                                    <th>Email</th>
+                                    <th>Endereço</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyEmpresas"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/empresas.js"></script>
+</body>
+</html>

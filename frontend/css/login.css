@@ -1,0 +1,195 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    color: #f4f7ff;
+    background: linear-gradient(180deg, #0d2755 0%, #0a1a31 45%, #1f4d8e 100%);
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle at top left, rgba(134, 189, 255, 0.18), transparent 24%),
+                      radial-gradient(circle at bottom right, rgba(5, 61, 126, 0.22), transparent 20%);
+}
+
+.page-shell {
+    min-height: 100vh;
+    position: relative;
+}
+
+.topbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 2rem;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.85rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.logo {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.12));
+}
+
+.brand span {
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+
+.topnav a {
+    color: rgba(255, 255, 255, 0.86);
+    margin-right: 1.5rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.topnav a:last-child {
+    margin-right: 0;
+}
+
+.topnav a:hover {
+    color: #d4e4ff;
+}
+
+.topbar-login {
+    border-color: rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+}
+
+.login-page {
+    min-height: 100vh;
+    padding: 4rem 1.5rem;
+}
+
+.glass-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 2.2rem 2rem;
+    border-radius: 1.75rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 32px 100px rgba(2, 19, 60, 0.35);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    animation: fadeInUp 0.9s ease both;
+}
+
+.card-header h2 {
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    color: #f7f9ff;
+}
+
+.card-header p {
+    margin-bottom: 0;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.form-label {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.form-control {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    transition: all 0.25s ease;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-control:focus {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 0.18rem rgba(67, 124, 255, 0.18);
+    color: #ffffff;
+}
+
+.form-check-label {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.text-white-50 {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.btn-primary {
+    background: #1a5ccb;
+    border-color: #1a5ccb;
+    box-shadow: 0 16px 30px rgba(26, 92, 203, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #163fa0;
+    border-color: #163fa0;
+    transform: translateY(-2px);
+    box-shadow: 0 20px 36px rgba(18, 68, 166, 0.28);
+}
+
+.btn-outline-light {
+    color: #ffffff;
+}
+
+.btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.glass-card:hover {
+    transform: translateY(-6px);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(28px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 767px) {
+    .topbar {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .topnav {
+        display: none !important;
+    }
+
+    .login-page {
+        padding-top: 6rem;
+    }
+}

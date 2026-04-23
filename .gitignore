@@ -1,0 +1,63 @@
+# ========================================
+# .gitignore - Promoter Access Control
+# ========================================
+# Ignora arquivos e pastas desnecessários no versionamento Git
+
+# Diretórios de build e compilação
+bin/
+obj/
+Debug/
+Release/
+
+# Arquivos de dependências .NET
+*.deps.json
+*.runtimeconfig.json
+*.runtimeconfig.dev.json
+
+# Arquivos de cache e temporários
+.vs/
+.vscode/
+*.vs/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Arquivos de projeto do Visual Studio
+*.csproj.user
+*.sln.DotSettings.user
+*.userprefs
+.idea/
+
+# Arquivos de log
+*.log
+logs/
+*.stackdump
+
+# Pasta de publicação
+publish/
+PublishProfiles/
+
+# NuGet
+*.nupkg
+*.nuspec
+# nuget.config
+.nuget/
+
+# Ambiente local
+.env
+.env.local
+appsettings.Development.json
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Outros
+dist/
+build/
+node_modules/
+.nyc_output/
+coverage/

@@ -1,0 +1,136 @@
+.table-responsive {
+    border-radius: 1.2rem;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+    color: #e9f2ff;
+}
+
+.table thead th {
+    background: rgba(92, 140, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 1rem;
+    border: none;
+}
+
+.table tbody tr {
+    border-color: rgba(255, 255, 255, 0.06);
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background: rgba(92, 140, 255, 0.08);
+}
+
+.table tbody td {
+    padding: 0.95rem 1rem;
+    color: #d5eaff;
+    border-color: rgba(255, 255, 255, 0.06);
+    vertical-align: middle;
+}
+
+#indicadoresRelatorio {
+    display: none;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.stats-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.2rem;
+    background: rgba(15, 35, 72, 0.92);
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.18);
+}
+
+.stats-card small {
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.stats-card h4 {
+    color: #ffffff;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+#graficosRelatorio {
+    display: none;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+#graficosRelatorio .card {
+    border-radius: 1.2rem;
+}
+
+#graficosRelatorio canvas {
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
+}
+
+#tabelaRelatorioCard {
+    display: none;
+}
+
+#tabelaRelatorioCard.show {
+    display: block;
+}
+
+.card-title {
+    color: #ffffff;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.card-body h6 {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+form label {
+    color: #e9f2ff;
+    margin-bottom: 0.5rem;
+}
+
+.input-group .form-control {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.input-group .btn-outline-primary {
+    border-color: rgba(92, 140, 255, 0.4);
+    color: #8fb7ff;
+}
+
+.input-group .btn-outline-primary:hover {
+    background: rgba(92, 140, 255, 0.2);
+}
+
+#mensagemExportar {
+    padding: 1rem;
+    border-radius: 1rem;
+    background: rgba(92, 140, 255, 0.12);
+    border: 1px solid rgba(92, 140, 255, 0.2);
+    color: #8fb7ff;
+}
+
+@media (max-width: 768px) {
+    .table {
+        font-size: 0.9rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    #graficosRelatorio {
+        grid-template-columns: 1fr;
+    }
+}
