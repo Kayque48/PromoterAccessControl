@@ -1,6 +1,6 @@
 // api.js - Funções para comunicação com a API
 
-const API_BASE_URL = 'https://localhost:7272/api';
+const API_BASE_URL = 'http://localhost:5297/api';
 
 // Função para obter token do localStorage
 function getAuthToken() {
@@ -68,6 +68,31 @@ async function apiPost(endpoint, data) {
         return await response.json();
     } catch (error) {
         console.error('Erro na requisição POST:', error);
+        throw error;
+    }
+}
+
+async function apiPostBlob(endpoint, data) {
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(data)
+        });
+
+        if (response.status === 401) {
+            logout();
+            throw new Error('Sessão expirada. Faça login novamente.');
+        }
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || `Erro na requisição: ${response.status}`);
+        }
+
+        return await response.blob();
+    } catch (error) {
+        console.error('Erro na requisição POST Blob:', error);
         throw error;
     }
 }
@@ -177,24 +202,24 @@ async function deleteEmpresa(id) {
 
 // Registros de Acesso
 async function getRegistrosAcesso() {
-    return await apiGet('/registrosacessos');
+    return await apiGet('/registrosacesso');
 }
 
-async function registrarEntrada(promoterId, empresaId) {
-    return await apiPost('/registrosacessos/entrada', { promoterId, empresaId });
+async function registrarEntrada(promotorId, empresaId) {
+    const usuarioId = parseInt(getCurrentUser()?.id || '', 10);
+    return await apiPost('/registrosacesso/entrada', { promotorId, empresaId, usuarioId });
 }
 
 async function registrarSaida(registroId) {
-    return await apiPost(`/registrosacessos/${registroId}/saida`, {});
+    const usuarioId = parseInt(getCurrentUser()?.id || '', 10);
+    return await apiPost(`/registrosacesso/${registroId}/saida`, { usuarioId });
 }
 
 // Relatórios
 async function getRelatorio(filtros) {
-    const params = new URLSearchParams(filtros);
-    return await apiGet(`/relatorios?${params.toString()}`);
+    return await apiPost('/relatorios/agregado', filtros);
 }
 
 async function exportarCSV(filtros) {
-    const params = new URLSearchParams(filtros);
-    return `${API_BASE_URL}/relatorios/exportar?${params.toString()}&Authorization=Bearer ${getAuthToken()}`;
+    return await apiPostBlob('/relatorios/exportar-csv', filtros);
 }

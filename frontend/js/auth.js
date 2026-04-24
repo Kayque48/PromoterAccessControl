@@ -1,6 +1,6 @@
 // auth.js - Funções de autenticação
 
-const API_BASE_URL = 'https://localhost:7272/api';
+const AUTH_API_BASE_URL = 'http://localhost:5297/api';
 
 // Verifica se o usuário está logado
 function isLoggedIn() {
@@ -26,7 +26,7 @@ function logout() {
 // Login com API
 async function login(login, senha) {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        const response = await fetch(`${AUTH_API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -35,8 +35,15 @@ async function login(login, senha) {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Falha na autenticação');
+            let errorMessage = 'Falha na autenticação';
+            try {
+                const error = await response.json();
+                errorMessage = error?.message || errorMessage;
+            } catch {
+                const text = await response.text();
+                if (text) errorMessage = text;
+            }
+            throw new Error(errorMessage);
         }
 
         const data = await response.json();

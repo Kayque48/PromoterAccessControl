@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using ControlePromotores.Api.Services;
 using ControlePromotores.Api.DTOs;
 
@@ -18,6 +19,23 @@ namespace ControlePromotores.Api.Controllers
         }
 
         /// <summary>
+        /// Obtém históricos de registros (entradas e saídas agrupadas por sessão)
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<List<RegistroSessaoResponse>>> GetAll()
+        {
+            try
+            {
+                var registros = await _registroService.GetAllSessaoAsync();
+                return Ok(registros);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erro ao buscar registros", details = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Registra entrada de um promotor
         /// </summary>
         [HttpPost("entrada")]
@@ -28,10 +46,13 @@ namespace ControlePromotores.Api.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
+                var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var usuarioId = int.TryParse(usuarioIdClaim, out var claimId) ? claimId : request.UsuarioId;
+
                 var registro = await _registroService.RegistrarEntradaAsync(
                     request.PromotorId,
                     request.EmpresaId,
-                    request.UsuarioId,
+                    usuarioId,
                     request.Observacao);
                 return CreatedAtAction(nameof(GetById), new { id = registro.Id }, registro);
             }
@@ -60,10 +81,47 @@ namespace ControlePromotores.Api.Controllers
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
+                var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var usuarioId = int.TryParse(usuarioIdClaim, out var claimId) ? claimId : request.UsuarioId;
+
                 var registro = await _registroService.RegistrarSaidaAsync(
                     request.PromotorId,
                     request.EmpresaId,
-                    request.UsuarioId,
+                    usuarioId,
+                    request.Observacao);
+                return Ok(registro);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erro ao registrar saída", details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Registra saída usando o ID do registro de entrada aberto
+        /// </summary>
+        [HttpPost("{entradaId}/saida")]
+        public async Task<ActionResult<RegistroResponse>> RegistrarSaidaPorId(int entradaId, [FromBody] RegistrarSaidaRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                var usuarioIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var usuarioId = int.TryParse(usuarioIdClaim, out var claimId) ? claimId : request.UsuarioId;
+
+                var registro = await _registroService.RegistrarSaidaPorRegistroIdAsync(
+                    entradaId,
+                    usuarioId,
                     request.Observacao);
                 return Ok(registro);
             }

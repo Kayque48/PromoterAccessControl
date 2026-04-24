@@ -35,10 +35,10 @@ async function carregarDados() {
 }
 
 function atualizarIndicadores(dashboard) {
-    document.getElementById('cardPromotoresAtivos').textContent = dashboard.promotoresAtivos || 0;
-    document.getElementById('cardVisitasHoje').textContent = dashboard.visitasHoje || 0;
-    document.getElementById('cardMediaHorasDia').textContent = (dashboard.mediaHorasDia || 0).toFixed(1) + 'h';
-    document.getElementById('cardTotalRegistros').textContent = dashboard.totalRegistros || 0;
+    document.getElementById('cardPromotoresAtivos').textContent = dashboard.totalPromotoresAtivos || 0;
+    document.getElementById('cardVisitasHoje').textContent = dashboard.totalVisitasHoje || 0;
+    document.getElementById('cardMediaHorasDia').textContent = (dashboard.mediaHorasPorPromotor || 0).toFixed(1) + 'h';
+    document.getElementById('cardTotalRegistros').textContent = dashboard.totalRegistrosUltimos30Dias || 0;
 }
 
 async function carregarGraficos() {
@@ -57,8 +57,8 @@ function criarGraficoFrequencia(dados) {
     const ctx = document.getElementById('graficoFrequencia');
     if (!ctx) return;
     
-    const labels = dados.map(d => d.dia);
-    const values = dados.map(d => d.visitasQuantidade);
+    const labels = dados.map(d => d.data);
+    const values = dados.map(d => d.totalVisitas);
     
     new Chart(ctx, {
         type: 'bar',

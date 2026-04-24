@@ -106,14 +106,15 @@ function renderizarRelatorio(relatorio) {
 async function exportarArquivo() {
     try {
         const filtros = obterFiltros();
-        const url = `${API_BASE_URL}/relatorios/exportar?dataInicio=${filtros.dataInicio}&dataFim=${filtros.dataFim}&Authorization=Bearer ${getToken()}`;
-        
+        const blob = await exportarCSV(filtros);
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = 'relatorio.csv';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     } catch (error) {
         console.error('Erro ao exportar:', error);
         alert('Erro ao exportar CSV');

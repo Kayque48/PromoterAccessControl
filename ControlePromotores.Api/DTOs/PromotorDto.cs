@@ -36,6 +36,7 @@ namespace ControlePromotores.Api.DTOs
         public string? Email { get; set; }
         public required string Tipo { get; set; }
         public int? EmpresaExclusivaId { get; set; }
+        public int? EmpresaId => EmpresaExclusivaId;
         public DateTime CriadoEm { get; set; }
         public DateTime AtualizadoEm { get; set; }
         public bool Ativo { get; set; }

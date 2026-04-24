@@ -123,6 +123,49 @@ namespace ControlePromotores.Api.Services
             return await MapearParaResponseAsync(registro.Id);
         }
 
+        public async Task<RegistroResponse> RegistrarSaidaPorRegistroIdAsync(int registroEntradaId, int usuarioId, string? observacao = null)
+        {
+            var entrada = await _context.Registros.FindAsync(registroEntradaId);
+            if (entrada == null || entrada.Tipo != "entrada")
+                throw new KeyNotFoundException("Registro de entrada não encontrado.");
+
+            return await RegistrarSaidaAsync(entrada.PromotorId, entrada.EmpresaId, usuarioId, observacao);
+        }
+
+        public async Task<List<RegistroSessaoResponse>> GetAllSessaoAsync()
+        {
+            var registros = await _context.Registros
+                .Include(r => r.Promotor)
+                .Include(r => r.Empresa)
+                .Where(r => r.Tipo == "entrada" || r.Tipo == "saida")
+                .OrderBy(r => r.DataHora)
+                .ToListAsync();
+
+            var saidas = registros
+                .Where(r => r.Tipo == "saida")
+                .ToList();
+
+            return registros
+                .Where(r => r.Tipo == "entrada")
+                .Select(entrada => new RegistroSessaoResponse
+                {
+                    Id = entrada.Id,
+                    PromoterId = entrada.PromotorId,
+                    CompanyId = entrada.EmpresaId,
+                    PromotorNome = entrada.Promotor?.Nome ?? string.Empty,
+                    EmpresaNome = entrada.Empresa?.RazaoSocial ?? string.Empty,
+                    EntryTime = entrada.DataHora,
+                    ExitTime = saidas
+                        .Where(saida => saida.PromotorId == entrada.PromotorId
+                                        && saida.EmpresaId == entrada.EmpresaId
+                                        && saida.DataHora > entrada.DataHora)
+                        .OrderBy(saida => saida.DataHora)
+                        .Select(saida => (DateTime?)saida.DataHora)
+                        .FirstOrDefault()
+                })
+                .ToList();
+        }
+
         public async Task<List<PromotorAtivoResponse>> GetPromotoresAtivosAsync()
         {
             var agora = DateTime.UtcNow;

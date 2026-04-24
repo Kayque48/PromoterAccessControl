@@ -31,6 +31,19 @@ namespace ControlePromotores.Api.DTOs
         public string? Observacao { get; set; }
     }
 
+    public class RegistroSessaoResponse
+    {
+        public int Id { get; set; }
+        public int PromoterId { get; set; }
+        public int CompanyId { get; set; }
+        public string PromotorNome { get; set; } = string.Empty;
+        public string EmpresaNome { get; set; } = string.Empty;
+        public DateTime EntryTime { get; set; }
+        public DateTime? ExitTime { get; set; }
+        public DateTime Entrada => EntryTime;
+        public DateTime? Saida => ExitTime;
+    }
+
     public class PromotorAtivoResponse
     {
         public int PromotorId { get; set; }
