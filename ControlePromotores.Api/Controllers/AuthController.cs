@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
 using ControlePromotores.Api.BD;
@@ -72,10 +73,11 @@ namespace ControlePromotores.Api.Controllers
         }
 
         /// <summary>
-        /// Registra novo usuário no sistema. Requer autorização adequada (deve ser protegido via [Authorize(Roles = "admin")]).
+        /// Registra novo usuário no sistema. Requer autorização de administrador.
         /// Valida unicidade de login e armazena senha com hash BCrypt.
         /// </summary>
         [HttpPost("register")]
+        [Authorize(Roles = "admin")]
         public async Task<ActionResult<LoginResponse>> Register([FromBody] CriarUsuarioRequest request)
         {
             try

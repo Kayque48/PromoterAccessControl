@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ControlePromotores.Api.BD;
 using ControlePromotores.Api.Models;
 using ControlePromotores.Api.DTOs;
+using ControlePromotores.Api.Utils;
 
 namespace ControlePromotores.Api.Services
 {
@@ -25,15 +26,26 @@ namespace ControlePromotores.Api.Services
             if (promotor == null)
                 throw new KeyNotFoundException("Promotor não encontrado.");
 
+            if (!promotor.Ativo)
+                throw new InvalidOperationException("Promotor inativo não pode registrar entrada.");
+
             var empresa = await _context.Empresas.FindAsync(empresaId);
             if (empresa == null)
                 throw new KeyNotFoundException("Empresa não encontrada.");
+
+            if (!empresa.Ativo)
+                throw new InvalidOperationException("Empresa inativa não pode receber registros de entrada.");
 
             var usuario = await _context.Usuarios.FindAsync(usuarioId);
             if (usuario == null)
                 throw new KeyNotFoundException("Usuário não encontrado.");
 
-            var hoje = DateTime.UtcNow.Date;
+            // Validação de dias permitidos: Verifica se o promotor tem permissão de trabalhar neste dia da semana.
+            var hoje = DateTime.UtcNow;
+            if (!DiasPermitidosHelper.IsDiaPermitido(promotor.DiasPermitidos, hoje.DayOfWeek))
+                throw new InvalidOperationException($"Promotor não tem autorização para trabalhar em {hoje:dddd}");
+
+            var hojeData = hoje.Date;
 
             // Validação de negócio: Impede entradas duplicadas (promotor não pode ter 2 entradas abertas no mesmo dia/empresa).
             // Consulta: Busca entrada do dia atual SEM saída correspondente (saída posterior).
@@ -42,7 +54,7 @@ namespace ControlePromotores.Api.Services
                 .Where(r => r.PromotorId == promotorId
                             && r.EmpresaId == empresaId
                             && r.Tipo == "entrada"
-                            && r.DataHora >= hoje)
+                            && r.DataHora >= hojeData)
                 .AnyAsync(r => !_context.Registros.Any(rs =>
                     rs.PromotorId == r.PromotorId &&
                     rs.EmpresaId == r.EmpresaId &&

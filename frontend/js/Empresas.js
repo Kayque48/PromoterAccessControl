@@ -35,6 +35,22 @@ async function buscarCepEmpresa() {
     if (!cep) return;
 
     document.getElementById('logradouroEmpresa').value = 'Buscando...';
+
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (data.erro) {
+            alert('CEP não encontrado. Preencha manualmente.');
+            document.getElementById('logradouroEmpresa').value = '';
+            return;
+        }
+
+        document.getElementById('logradouroEmpresa').value = `${data.logradouro || ''}${data.bairro ? ', ' + data.bairro : ''} ${data.localidade || ''} - ${data.uf || ''}`.trim();
+    } catch (error) {
+        alert('Erro ao buscar CEP. Preencha manualmente.');
+        document.getElementById('logradouroEmpresa').value = '';
+    }
 }
 
 function formatarCNPJ(cnpj) {
@@ -61,24 +77,6 @@ function formatarTelefone(tel) {
         .replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
         .replace(/-$/, '');
 }
-
-
-    try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await response.json();
-
-        if (data.erro) {
-            alert('CEP não encontrado. Preencha manualmente.');
-            document.getElementById('logradouroEmpresa').value = '';
-            return;
-        }
-
-        document.getElementById('logradouroEmpresa').value = `${data.logradouro || ''}${data.bairro ? ', ' + data.bairro : ''} ${data.localidade || ''} - ${data.uf || ''}`.trim();
-    } catch (error) {
-        alert('Erro ao buscar CEP. Preencha manualmente.');
-        document.getElementById('logradouroEmpresa').value = '';
-    }
-
 
 function limparValidacaoEmpresa() {
     const campos = ['cnpj', 'razaoSocial', 'cepEmpresa', 'logradouroEmpresa', 'numeroEmpresa', 'complementoEmpresa', 'telefoneEmpresa', 'emailEmpresa'];

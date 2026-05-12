@@ -38,13 +38,16 @@ namespace ControlePromotores.Api.Services
 
         public async Task<EmpresaResponse> CreateAsync(CriarEmpresaRequest request)
         {
+            // Remover máscara do CNPJ: "11.222.333/0001-44" → "11222333000144"
+            var cnpjLimpo = request.CNPJ.Replace(".", "").Replace("/", "").Replace("-", "");
+
             // Verificar CNPJ duplicado
-            if (await _context.Empresas.AnyAsync(e => e.CNPJ == request.CNPJ))
+            if (await _context.Empresas.AnyAsync(e => e.CNPJ == cnpjLimpo))
                 throw new InvalidOperationException("CNPJ já cadastrado");
 
             var empresa = new Empresa
             {
-                CNPJ = request.CNPJ,
+                CNPJ = cnpjLimpo,
                 RazaoSocial = request.RazaoSocial,
                 NomeFantasia = request.NomeFantasia ?? string.Empty,
                 Telefone = request.Telefone,
@@ -63,11 +66,14 @@ namespace ControlePromotores.Api.Services
             var empresa = await _context.Empresas.FindAsync(id);
             if (empresa == null) throw new KeyNotFoundException("Empresa não encontrada");
 
+            // Remover máscara do CNPJ: "11.222.333/0001-44" → "11222333000144"
+            var cnpjLimpo = request.CNPJ.Replace(".", "").Replace("/", "").Replace("-", "");
+
             // Verificar CNPJ duplicado (se foi alterado)
-            if (empresa.CNPJ != request.CNPJ && await _context.Empresas.AnyAsync(e => e.CNPJ == request.CNPJ))
+            if (empresa.CNPJ != cnpjLimpo && await _context.Empresas.AnyAsync(e => e.CNPJ == cnpjLimpo))
                 throw new InvalidOperationException("CNPJ já cadastrado");
 
-            empresa.CNPJ = request.CNPJ;
+            empresa.CNPJ = cnpjLimpo;
             empresa.RazaoSocial = request.RazaoSocial;
             empresa.NomeFantasia = request.NomeFantasia ?? string.Empty;
             empresa.Telefone = request.Telefone;

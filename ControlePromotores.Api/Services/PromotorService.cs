@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ControlePromotores.Api.BD;
 using ControlePromotores.Api.Models;
 using ControlePromotores.Api.DTOs;
+using ControlePromotores.Api.Utils;
 
 namespace ControlePromotores.Api.Services
 {
@@ -58,19 +59,26 @@ namespace ControlePromotores.Api.Services
                     throw new KeyNotFoundException("Empresa não encontrada");
             }
 
+            // Remover máscara do CPF: "123.456.789-01" → "12345678901"
+            var cpfLimpo = request.CPF.Replace(".", "").Replace("-", "");
+
             // Validação de data: CPF é identificador único nacional brasileiro.
             // Impede duplicação: Dois promotores não podem ter o mesmo CPF.
-            if (await _context.Promotores.AnyAsync(p => p.CPF == request.CPF))
+            if (await _context.Promotores.AnyAsync(p => p.CPF == cpfLimpo))
                 throw new InvalidOperationException("CPF já cadastrado");
+
+            // Converter diasPermitidos de array para bitmask (int)
+            var diasBitmask = DiasPermitidosHelper.DiaArrayParaBitmask(request.DiasPermitidos);
 
             var promotor = new Promotor
             {
                 Nome = request.Nome,
-                CPF = request.CPF,
+                CPF = cpfLimpo,
                 Telefone = request.Telefone ?? null!,
                 Email = request.Email ?? null!,
                 Tipo = request.EmpresaId > 0 ? "exclusivo" : "promotor",
                 EmpresaExclusivaId = request.EmpresaId > 0 ? request.EmpresaId : null,
+                DiasPermitidos = diasBitmask,
                 Ativo = true
             };
 
@@ -97,16 +105,23 @@ namespace ControlePromotores.Api.Services
                     throw new KeyNotFoundException("Empresa não encontrada");
             }
 
+            // Remover máscara do CPF: "123.456.789-01" → "12345678901"
+            var cpfLimpo = request.CPF.Replace(".", "").Replace("-", "");
+
             // Verificar CPF duplicado
-            if (promotor.CPF != request.CPF && await _context.Promotores.AnyAsync(p => p.CPF == request.CPF))
+            if (promotor.CPF != cpfLimpo && await _context.Promotores.AnyAsync(p => p.CPF == cpfLimpo))
                 throw new InvalidOperationException("CPF já cadastrado");
 
+            // Converter diasPermitidos de array para bitmask (int)
+            var diasBitmask = DiasPermitidosHelper.DiaArrayParaBitmask(request.DiasPermitidos);
+
             promotor.Nome = request.Nome;
-            promotor.CPF = request.CPF;
+            promotor.CPF = cpfLimpo;
             promotor.Telefone = request.Telefone ?? promotor.Telefone;
             promotor.Email = request.Email ?? promotor.Email;
             promotor.Tipo = request.EmpresaId > 0 ? "exclusivo" : "promotor";
             promotor.EmpresaExclusivaId = request.EmpresaId > 0 ? request.EmpresaId : null;
+            promotor.DiasPermitidos = diasBitmask;
             promotor.AtualizadoEm = DateTime.UtcNow;
 
             _context.Promotores.Update(promotor);
@@ -140,6 +155,7 @@ namespace ControlePromotores.Api.Services
                 Email = promotor.Email,
                 Tipo = promotor.Tipo,
                 EmpresaExclusivaId = promotor.EmpresaExclusivaId,
+                DiasPermitidos = DiasPermitidosHelper.BitmaskParaDiaArray(promotor.DiasPermitidos),
                 CriadoEm = promotor.CriadoEm,
                 AtualizadoEm = promotor.AtualizadoEm,
                 Ativo = promotor.Ativo

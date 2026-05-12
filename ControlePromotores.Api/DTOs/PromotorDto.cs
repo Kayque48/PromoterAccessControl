@@ -21,6 +21,12 @@ namespace ControlePromotores.Api.DTOs
 
         [Required]
         public int EmpresaId { get; set; }
+
+        /// <summary>
+        /// Dias da semana permitidos em português: ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"].
+        /// Será convertido para bitmask no servidor.
+        /// </summary>
+        public string[]? DiasPermitidos { get; set; }
     }
 
     public class AtualizarPromotorRequest : CriarPromotorRequest
@@ -36,6 +42,7 @@ namespace ControlePromotores.Api.DTOs
         public string? Email { get; set; }
         public required string Tipo { get; set; }
         public int? EmpresaExclusivaId { get; set; }
+        public string[]? DiasPermitidos { get; set; }
         public DateTime CriadoEm { get; set; }
         public DateTime AtualizadoEm { get; set; }
         public bool Ativo { get; set; }

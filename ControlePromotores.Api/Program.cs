@@ -6,16 +6,33 @@ using System.Text;
 using ControlePromotores.Api.BD;
 using ControlePromotores.Api.Services;
 using ControlePromotores.Api.Data;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Adicionar DbContext
-// For local development, using SQLite by default
-// To enable MySQL: run 'dotnet restore' first, then set UseSqlite to false in appsettings
-var sqliteConnection = builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=promoter_control.db";
+// Configurar DbContext: MySQL é o banco oficial, SQLite apenas para dev/testes offline.
+var useSqlite = builder.Configuration.GetValue<bool>("UseSqlite", false);
 
-builder.Services.AddDbContext<PromotoresContext>(options =>
-    options.UseSqlite(sqliteConnection));
+if (useSqlite)
+{
+    // Modo desenvolvimento offline: SQLite
+    var sqliteConnection = builder.Configuration.GetConnectionString("SqliteConnection")
+        ?? "Data Source=promoter_control.db";
+    builder.Services.AddDbContext<PromotoresContext>(options =>
+        options.UseSqlite(sqliteConnection));
+    Console.WriteLine("⚠️  Usando SQLite (desenvolvimento offline)");
+}
+else
+{
+    // Modo padrão: MySQL (banco oficial)
+    var mySqlConnection = builder.Configuration.GetConnectionString("MySqlConnection")
+        ?? throw new InvalidOperationException("MySqlConnection não configurada em appsettings.json");
+
+    builder.Services.AddDbContext<PromotoresContext>(options =>
+        options.UseMySql(mySqlConnection,
+            ServerVersion.AutoDetect(mySqlConnection)));
+    Console.WriteLine("✅ Usando MySQL (banco oficial)");
+}
 
 // Adicionar serviços
 builder.Services.AddScoped<TokenService>();
@@ -103,7 +120,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<PromotoresContext>();
-    await DataInitializer.InitializeAsync(context);
+    await DataInitializer.InitializeAsync(context, useSqlite);
 }
 
 // Configurar pipeline HTTP

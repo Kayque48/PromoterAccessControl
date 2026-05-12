@@ -25,6 +25,10 @@ namespace ControlePromotores.Api.Models
         [StringLength(20)] // "promotor" ou "exclusivo"
         public string Tipo { get; set; } = "promotor";
 
+        // Bitmap de dias permitidos (1=Dom, 2=Seg, 4=Ter, 8=Qua, 16=Qui, 32=Sex, 64=Sab)
+        // Exemplo: Segunda + Quarta + Sexta = 2 + 8 + 32 = 42
+        public int DiasPermitidos { get; set; } = 127; // 1111111 = todos os dias por padrão
+
         // Para promotor exclusivo
         public int? EmpresaExclusivaId { get; set; }
         public Empresa EmpresaExclusiva { get; set; }
