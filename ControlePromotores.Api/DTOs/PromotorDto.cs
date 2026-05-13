@@ -19,11 +19,19 @@ namespace ControlePromotores.Api.DTOs
         [StringLength(150)]
         public string? Email { get; set; }
 
+        /// <summary>
+        /// Tipo será ignorado nesta requisição. O tipo é determinado automaticamente:
+        /// - Se EmpresaId > 0: promotor será 'exclusivo'
+        /// - Se EmpresaId <= 0 ou null: promotor será 'promotor' (comum)
+        /// </summary>
         [StringLength(20)]
         public string? Tipo { get; set; }
 
-        [Required]
-        public int EmpresaId { get; set; }
+        /// <summary>
+        /// ID da empresa exclusiva (se tipo exclusivo) ou da empresa inicial do vínculo (se comum).
+        /// Opcional: pode ser null para criar promotor comum sem empresa inicial, vinculado depois.
+        /// </summary>
+        public int? EmpresaId { get; set; }
 
         /// <summary>
         /// Dias da semana permitidos em português: ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"].

@@ -60,7 +60,8 @@ namespace ControlePromotores.Api.Services
             if (await _context.Promotores.AnyAsync(p => p.CPF == cpfLimpo))
                 throw new InvalidOperationException("CPF ja cadastrado");
 
-            var tipo = NormalizarTipo(request.Tipo);
+            // Tipo é determinado APENAS por EmpresaId, ignorando request.Tipo
+            var tipo = request.EmpresaId > 0 ? "exclusivo" : "promotor";
             var diasPermitidos = ConverterDiasPermitidos(request.DiasPermitidos);
 
             var promotor = new Promotor
@@ -70,7 +71,7 @@ namespace ControlePromotores.Api.Services
                 Telefone = request.Telefone ?? null!,
                 Email = request.Email ?? null!,
                 Tipo = tipo,
-                EmpresaExclusivaId = tipo == "exclusivo" && request.EmpresaId > 0 ? request.EmpresaId : null,
+                EmpresaExclusivaId = tipo == "exclusivo" ? request.EmpresaId : null,
                 Ativo = true
             };
 
@@ -78,7 +79,7 @@ namespace ControlePromotores.Api.Services
             {
                 promotor.PromotorEmpresas.Add(new PromotorEmpresa
                 {
-                    EmpresaId = request.EmpresaId,
+                    EmpresaId = request.EmpresaId.Value,
                     DiasPermitidos = diasPermitidos,
                     Ativo = true
                 });
@@ -114,7 +115,8 @@ namespace ControlePromotores.Api.Services
             if (promotor.CPF != cpfLimpo && await _context.Promotores.AnyAsync(p => p.CPF == cpfLimpo))
                 throw new InvalidOperationException("CPF ja cadastrado");
 
-            var tipo = NormalizarTipo(request.Tipo ?? promotor.Tipo);
+            // Tipo é determinado APENAS por EmpresaId, ignorando request.Tipo
+            var tipo = request.EmpresaId > 0 ? "exclusivo" : "promotor";
             var diasPermitidos = ConverterDiasPermitidos(request.DiasPermitidos);
 
             promotor.Nome = request.Nome;
@@ -126,14 +128,14 @@ namespace ControlePromotores.Api.Services
 
             if (tipo == "exclusivo")
             {
-                promotor.EmpresaExclusivaId = request.EmpresaId > 0 ? request.EmpresaId : promotor.EmpresaExclusivaId;
+                promotor.EmpresaExclusivaId = request.EmpresaId;
                 DesativarVinculos(promotor);
             }
             else
             {
                 promotor.EmpresaExclusivaId = null;
                 if (request.EmpresaId > 0)
-                    GarantirVinculo(promotor, request.EmpresaId, diasPermitidos);
+                    GarantirVinculo(promotor, request.EmpresaId.Value, diasPermitidos);
             }
 
             _context.Promotores.Update(promotor);
@@ -229,8 +231,9 @@ namespace ControlePromotores.Api.Services
                 EmpresaId = promotor.EmpresaExclusivaId ?? primeiroVinculo?.EmpresaId,
                 EmpresaIds = empresaIds,
                 EmpresaExclusivaId = promotor.EmpresaExclusivaId,
+                // DiasPermitidos nunca é null. Se sem vínculo, retorna default (Seg-Sex)
                 DiasPermitidos = primeiroVinculo == null
-                    ? null
+                    ? DiasPermitidosHelper.BitmaskParaDiaArray(DiasPermitidosPadrao)
                     : DiasPermitidosHelper.BitmaskParaDiaArray(primeiroVinculo.DiasPermitidos),
                 CriadoEm = promotor.CriadoEm,
                 AtualizadoEm = promotor.AtualizadoEm,

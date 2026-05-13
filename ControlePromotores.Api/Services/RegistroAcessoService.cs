@@ -92,14 +92,18 @@ namespace ControlePromotores.Api.Services
             if (usuario == null)
                 throw new KeyNotFoundException("Usuário não encontrado.");
 
-            var hoje = DateTime.UtcNow.Date;
+            // Validar vínculo e dias permitidos antes de registrar saída
+            var hoje = DateTime.UtcNow;
+            await ValidarVinculoEDiasPermitidosAsync(promotor, empresaId, hoje.DayOfWeek);
+
+            var hojeData = hoje.Date;
 
             // Busca entrada aberta (sem saída posterior) no mesmo dia/empresa.
             var entradaAberta = await _context.Registros
                 .Where(r => r.PromotorId == promotorId
                             && r.EmpresaId == empresaId
                             && r.Tipo == "entrada"
-                            && r.DataHora >= hoje)
+                            && r.DataHora >= hojeData)
                 .Where(r => !_context.Registros.Any(rs =>
                     rs.PromotorId == r.PromotorId &&
                     rs.EmpresaId == r.EmpresaId &&

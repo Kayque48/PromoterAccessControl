@@ -40,7 +40,7 @@ namespace ControlePromotores.Api.Data
                 {
                     Nome = "Administrador",
                     Login = "admin",
-                    SenhaHash = BCrypt.Net.BCrypt.HashPassword("senha123"),
+                    SenhaHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                     Telefone = "0000-0000",
                     Cargo = "Administrador",
                     Perfil = "admin",
