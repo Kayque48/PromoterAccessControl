@@ -1,13 +1,14 @@
 // promotores.js - Gerencia CRUD de promotores
 
 let promotoresLista = [];
+let empresasPromotorLista = [];
 
 document.addEventListener('DOMContentLoaded', async function() {
     // Verifica autenticação
     requireAuth();
     
     // Carrega empresas para select
-    await carregarEmpresas();
+    await carregarEmpresasSelectPromotor();
     
     // Carrega promotores
     await carregarPromotores();
@@ -20,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     const btnNovoPromotor = document.getElementById('btnNovoPromotor');
     if (btnNovoPromotor) {
-        btnNovoPromotor.addEventListener('click', limparFormulario);
+        btnNovoPromotor.addEventListener('click', limparFormularioPromotor);
     }
     
     // Configurar event listeners para CEP
@@ -41,12 +42,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-async function carregarEmpresas() {
+async function carregarEmpresasSelectPromotor() {
     try {
-        const empresas = await getEmpresas();
+        empresasPromotorLista = await getEmpresas();
         const selectEmpresa = document.getElementById('empresa');
         if (selectEmpresa) {
-            empresas.forEach(emp => {
+            selectEmpresa.innerHTML = '<option value="">Selecione...</option>';
+
+            empresasPromotorLista.forEach(emp => {
                 const option = document.createElement('option');
                 option.value = emp.id;
                 option.textContent = emp.nomeFantasia || emp.razaoSocial;
@@ -56,6 +59,83 @@ async function carregarEmpresas() {
     } catch (error) {
         console.error('Erro ao carregar empresas:', error);
     }
+}
+
+const diasPermitidosMap = {
+    Sunday: 'domingo',
+    Monday: 'segunda',
+    Tuesday: 'ter\u00e7a',
+    Wednesday: 'quarta',
+    Thursday: 'quinta',
+    Friday: 'sexta',
+    Saturday: 's\u00e1bado',
+    domingo: 'domingo',
+    segunda: 'segunda',
+    terca: 'ter\u00e7a',
+    'ter\u00e7a': 'ter\u00e7a',
+    quarta: 'quarta',
+    quinta: 'quinta',
+    sexta: 'sexta',
+    sabado: 's\u00e1bado',
+    's\u00e1bado': 's\u00e1bado'
+};
+
+function normalizarDiaPermitido(dia) {
+    const chave = String(dia || '').trim().toLowerCase();
+    const original = String(dia || '').trim();
+    return diasPermitidosMap[original] || diasPermitidosMap[chave] || chave;
+}
+
+function getDiasPermitidosSelecionados() {
+    return Array.from(document.querySelectorAll('input[name="diasSemana"]:checked'))
+        .map(input => normalizarDiaPermitido(input.value))
+        .filter(Boolean);
+}
+
+function setDiasPermitidosSelecionados(diasPermitidos) {
+    const dias = new Set((diasPermitidos || []).map(normalizarDiaPermitido));
+
+    document.querySelectorAll('input[name="diasSemana"]').forEach(input => {
+        input.checked = dias.has(normalizarDiaPermitido(input.value));
+    });
+}
+
+function getTipoSelecionado() {
+    const categoria = document.getElementById('categoria')?.value || '';
+    return categoria.toLowerCase().includes('exclusivo') ? 'exclusivo' : 'promotor';
+}
+
+function getEmpresaIdPrincipal(promotor) {
+    if (promotor.empresaId) return promotor.empresaId;
+    if (promotor.empresaExclusivaId) return promotor.empresaExclusivaId;
+    if (Array.isArray(promotor.empresaIds) && promotor.empresaIds.length > 0) {
+        return promotor.empresaIds[0];
+    }
+
+    return '';
+}
+
+function getEmpresaNome(empresaId) {
+    const empresa = empresasPromotorLista.find(emp => Number(emp.id) === Number(empresaId));
+    return empresa ? (empresa.nomeFantasia || empresa.razaoSocial) : empresaId;
+}
+
+function formatarEmpresasPromotor(promotor) {
+    const empresaIds = Array.isArray(promotor.empresaIds) && promotor.empresaIds.length > 0
+        ? promotor.empresaIds
+        : [getEmpresaIdPrincipal(promotor)].filter(Boolean);
+
+    if (empresaIds.length === 0) return '-';
+    return empresaIds.map(getEmpresaNome).join(', ');
+}
+
+function formatarDiasPermitidos(diasPermitidos) {
+    if (!Array.isArray(diasPermitidos) || diasPermitidos.length === 0) return '-';
+    return diasPermitidos.map(normalizarDiaPermitido).join(', ');
+}
+
+function formatarTipoPromotor(tipo) {
+    return tipo === 'exclusivo' ? 'Promotor Exclusivo' : 'Promotor';
 }
 
 async function carregarPromotores() {
@@ -83,7 +163,10 @@ function renderizarPromotores() {
                     <p class="card-text">
                         <small><strong>CPF:</strong> ${promotor.cpf}</small><br/>
                         <small><strong>Telefone:</strong> ${promotor.telefone || '-'}</small><br/>
-                        <small><strong>Email:</strong> ${promotor.email || '-'}</small>
+                        <small><strong>Email:</strong> ${promotor.email || '-'}</small><br/>
+                        <small><strong>Tipo:</strong> ${formatarTipoPromotor(promotor.tipo)}</small><br/>
+                        <small><strong>Empresa:</strong> ${formatarEmpresasPromotor(promotor)}</small><br/>
+                        <small><strong>Dias:</strong> ${formatarDiasPermitidos(promotor.diasPermitidos)}</small>
                     </p>
                     <div class="d-flex gap-2">
                         <button class="btn btn-sm btn-edit" onclick="editarPromotor(${promotor.id})">Editar</button>
@@ -96,46 +179,11 @@ function renderizarPromotores() {
     });
 }
 
-async function handleSalvarPromotor(e) {
-    e.preventDefault();
-    
-    const id = document.getElementById('promotorId').value;
-    const nome = document.getElementById('nome').value;
-    const empresa = document.getElementById('empresa').value;
-    const cpf = document.getElementById('cpf').value;
-    
-    const data = {
-        nome,
-        cpf,
-        telefone: document.getElementById('telefone').value,
-        email: document.getElementById('email').value,
-        empresaId: parseInt(empresa)
-    };
-    
-    try {
-        if (id) {
-            await updatePromotor(id, data);
-        } else {
-            await createPromotor(data);
-        }
-        
-        // Recarrega lista
-        await carregarPromotores();
-        
-        // Fecha modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalPromotor'));
-        if (modal) modal.hide();
-        
-        limparFormulario();
-    } catch (error) {
-        console.error('Erro ao salvar:', error);
-        alert('Erro ao salvar promotor');
-    }
-}
-
-function limparFormulario() {
+function limparFormularioPromotor() {
     document.getElementById('formPromotor').reset();
     document.getElementById('promotorId').value = '';
+    document.getElementById('categoria').value = 'Promotor';
+    setDiasPermitidosSelecionados(['segunda', 'ter\u00e7a', 'quarta', 'quinta', 'sexta']);
 }
 
 async function editarPromotor(id) {
@@ -143,10 +191,14 @@ async function editarPromotor(id) {
         const promotor = await getPromotor(id);
         document.getElementById('promotorId').value = promotor.id;
         document.getElementById('nome').value = promotor.nome;
-        document.getElementById('empresa').value = promotor.empresaId;
-        document.getElementById('cpf').value = promotor.cpf;
+        document.getElementById('empresa').value = getEmpresaIdPrincipal(promotor);
+        document.getElementById('cpf').value = aplicarMascaraCPF(promotor.cpf);
+        document.getElementById('categoria').value = promotor.tipo === 'exclusivo' || promotor.empresaExclusivaId
+            ? 'Promotor Exclusivo'
+            : 'Promotor';
         document.getElementById('telefone').value = promotor.telefone || '';
         document.getElementById('email').value = promotor.email || '';
+        setDiasPermitidosSelecionados(promotor.diasPermitidos);
         
         const modal = new bootstrap.Modal(document.getElementById('modalPromotor'));
         modal.show();
@@ -167,7 +219,7 @@ async function deletarPromotor(id) {
     }
 }
 
-function buscarCep() {
+function buscarCepPromotor() {
     const cepInput = document.getElementById('cepPromotor');
     const logradouro = document.getElementById('logradouroPromotor');
     const cidade = document.getElementById('cidadePromotor');
@@ -274,7 +326,7 @@ async function handleSalvarPromotor(e) {
     const cpfInput = document.getElementById("cpf");
     const cpf = cpfInput.value;
 
-    // 🚨 valida antes de salvar
+    // Valida antes de salvar
     if (!validarCPF(cpf)) {
         cpfInput.classList.add("erro");
         cpfInput.focus();
@@ -282,13 +334,24 @@ async function handleSalvarPromotor(e) {
     }
 
     const id = document.getElementById('promotorId').value;
+    const empresaId = parseInt(document.getElementById('empresa').value, 10);
+
+    if (Number.isNaN(empresaId)) {
+        alert('Selecione uma empresa');
+        return;
+    }
+
+    const cpfFormatado = aplicarMascaraCPF(cpf);
+    cpfInput.value = cpfFormatado;
 
     const data = {
-        nome: document.getElementById('nome').value,
-        cpf: cpf.replace(/\D/g, ''), // salva limpo
-        telefone: document.getElementById('telefone').value,
-        email: document.getElementById('email').value,
-        empresaId: parseInt(document.getElementById('empresa').value)
+        nome: document.getElementById('nome').value.trim(),
+        cpf: cpfFormatado,
+        telefone: document.getElementById('telefone').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        tipo: getTipoSelecionado(),
+        empresaId,
+        diasPermitidos: getDiasPermitidosSelecionados()
     };
 
     try {
@@ -302,7 +365,7 @@ async function handleSalvarPromotor(e) {
 
         bootstrap.Modal.getInstance(document.getElementById('modalPromotor'))?.hide();
 
-        limparFormulario();
+        limparFormularioPromotor();
     } catch (e) {
         console.error('Erro ao salvar:', e);
         alert('Erro ao salvar promotor');
