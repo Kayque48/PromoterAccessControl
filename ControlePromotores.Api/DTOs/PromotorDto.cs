@@ -19,6 +19,9 @@ namespace ControlePromotores.Api.DTOs
         [StringLength(150)]
         public string? Email { get; set; }
 
+        [StringLength(20)]
+        public string? Tipo { get; set; }
+
         [Required]
         public int EmpresaId { get; set; }
 
@@ -41,6 +44,8 @@ namespace ControlePromotores.Api.DTOs
         public string? Telefone { get; set; }
         public string? Email { get; set; }
         public required string Tipo { get; set; }
+        public int? EmpresaId { get; set; }
+        public int[] EmpresaIds { get; set; } = Array.Empty<int>();
         public int? EmpresaExclusivaId { get; set; }
         public string[]? DiasPermitidos { get; set; }
         public DateTime CriadoEm { get; set; }

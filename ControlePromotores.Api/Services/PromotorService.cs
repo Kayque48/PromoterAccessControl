@@ -6,14 +6,9 @@ using ControlePromotores.Api.Utils;
 
 namespace ControlePromotores.Api.Services
 {
-    /// <summary>
-    /// Serviço de gestão de promotores com suporte a dois modelos de alocação:
-    /// 1. Promotor genérico: Trabalha para múltiplas empresas (relacionamento N:N via PromotorEmpresa).
-    /// 2. Promotor exclusivo: Vinculado a uma única empresa (EmpresaExclusivaId).
-    /// Garante unicidade de CPF e implementa soft delete para manutenção de histórico.
-    /// </summary>
     public class PromotorService
     {
+        private const byte DiasPermitidosPadrao = 62; // Seg-Sex, conforme banco oficial.
         private readonly PromotoresContext _context;
 
         public PromotorService(PromotoresContext context)
@@ -25,6 +20,7 @@ namespace ControlePromotores.Api.Services
         {
             var promotor = await _context.Promotores
                 .Include(p => p.EmpresaExclusiva)
+                .Include(p => p.PromotorEmpresas)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (promotor == null) return null;
@@ -35,12 +31,15 @@ namespace ControlePromotores.Api.Services
         {
             var query = _context.Promotores
                 .Include(p => p.EmpresaExclusiva)
+                .Include(p => p.PromotorEmpresas)
                 .Where(p => p.Ativo);
 
-            // Filtro opcional: Se empresaId informado, retorna apenas promotores exclusivos daquela empresa.
-            // Caso base (null): Retorna todos os promotores genéricos + exclusivos (para backend/admin).
             if (empresaId.HasValue)
-                query = query.Where(p => p.EmpresaExclusivaId == empresaId.Value);
+            {
+                query = query.Where(p =>
+                    p.EmpresaExclusivaId == empresaId.Value ||
+                    p.PromotorEmpresas.Any(pe => pe.EmpresaId == empresaId.Value && pe.Ativo));
+            }
 
             var promotores = await query.ToListAsync();
             return promotores.Select(MapearParaResponse).ToList();
@@ -48,27 +47,21 @@ namespace ControlePromotores.Api.Services
 
         public async Task<PromotorResponse> CreateAsync(CriarPromotorRequest request)
         {
-            // Lógica de negócio: Tipo de promotor é determinado pela presença de EmpresaId no request.
-            // - Se EmpresaId > 0: Cria promotor exclusivo (Tipo="exclusivo", EmpresaExclusivaId preenchido).
-            // - Caso contrário: Cria promotor genérico (Tipo="promotor", sem empresa exclusiva).
-            Empresa? empresaExclusiva = null;
+            Empresa? empresa = null;
             if (request.EmpresaId > 0)
             {
-                empresaExclusiva = await _context.Empresas.FindAsync(request.EmpresaId);
-                if (empresaExclusiva == null)
-                    throw new KeyNotFoundException("Empresa não encontrada");
+                empresa = await _context.Empresas.FindAsync(request.EmpresaId);
+                if (empresa == null)
+                    throw new KeyNotFoundException("Empresa nao encontrada");
             }
 
-            // Remover máscara do CPF: "123.456.789-01" → "12345678901"
-            var cpfLimpo = request.CPF.Replace(".", "").Replace("-", "");
+            var cpfLimpo = NormalizarCpf(request.CPF);
 
-            // Validação de data: CPF é identificador único nacional brasileiro.
-            // Impede duplicação: Dois promotores não podem ter o mesmo CPF.
             if (await _context.Promotores.AnyAsync(p => p.CPF == cpfLimpo))
-                throw new InvalidOperationException("CPF já cadastrado");
+                throw new InvalidOperationException("CPF ja cadastrado");
 
-            // Converter diasPermitidos de array para bitmask (int)
-            var diasBitmask = DiasPermitidosHelper.DiaArrayParaBitmask(request.DiasPermitidos);
+            var tipo = NormalizarTipo(request.Tipo);
+            var diasPermitidos = ConverterDiasPermitidos(request.DiasPermitidos);
 
             var promotor = new Promotor
             {
@@ -76,59 +69,78 @@ namespace ControlePromotores.Api.Services
                 CPF = cpfLimpo,
                 Telefone = request.Telefone ?? null!,
                 Email = request.Email ?? null!,
-                Tipo = request.EmpresaId > 0 ? "exclusivo" : "promotor",
-                EmpresaExclusivaId = request.EmpresaId > 0 ? request.EmpresaId : null,
-                DiasPermitidos = diasBitmask,
+                Tipo = tipo,
+                EmpresaExclusivaId = tipo == "exclusivo" && request.EmpresaId > 0 ? request.EmpresaId : null,
                 Ativo = true
             };
+
+            if (tipo == "promotor" && request.EmpresaId > 0)
+            {
+                promotor.PromotorEmpresas.Add(new PromotorEmpresa
+                {
+                    EmpresaId = request.EmpresaId,
+                    DiasPermitidos = diasPermitidos,
+                    Ativo = true
+                });
+            }
 
             _context.Promotores.Add(promotor);
             await _context.SaveChangesAsync();
 
-            if (empresaExclusiva != null)
-                promotor.EmpresaExclusiva = empresaExclusiva;
+            if (empresa != null && promotor.EmpresaExclusivaId == empresa.Id)
+                promotor.EmpresaExclusiva = empresa;
 
             return MapearParaResponse(promotor);
         }
 
         public async Task<PromotorResponse> UpdateAsync(int id, AtualizarPromotorRequest request)
         {
-            var promotor = await _context.Promotores.FindAsync(id);
-            if (promotor == null) throw new KeyNotFoundException("Promotor não encontrado");
+            var promotor = await _context.Promotores
+                .Include(p => p.PromotorEmpresas)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-            // Se mudou para exclusivo, verificar empresa
-            Empresa? empresaExclusiva = null;
+            if (promotor == null) throw new KeyNotFoundException("Promotor nao encontrado");
+
+            Empresa? empresa = null;
             if (request.EmpresaId > 0)
             {
-                empresaExclusiva = await _context.Empresas.FindAsync(request.EmpresaId);
-                if (empresaExclusiva == null)
-                    throw new KeyNotFoundException("Empresa não encontrada");
+                empresa = await _context.Empresas.FindAsync(request.EmpresaId);
+                if (empresa == null)
+                    throw new KeyNotFoundException("Empresa nao encontrada");
             }
 
-            // Remover máscara do CPF: "123.456.789-01" → "12345678901"
-            var cpfLimpo = request.CPF.Replace(".", "").Replace("-", "");
+            var cpfLimpo = NormalizarCpf(request.CPF);
 
-            // Verificar CPF duplicado
             if (promotor.CPF != cpfLimpo && await _context.Promotores.AnyAsync(p => p.CPF == cpfLimpo))
-                throw new InvalidOperationException("CPF já cadastrado");
+                throw new InvalidOperationException("CPF ja cadastrado");
 
-            // Converter diasPermitidos de array para bitmask (int)
-            var diasBitmask = DiasPermitidosHelper.DiaArrayParaBitmask(request.DiasPermitidos);
+            var tipo = NormalizarTipo(request.Tipo ?? promotor.Tipo);
+            var diasPermitidos = ConverterDiasPermitidos(request.DiasPermitidos);
 
             promotor.Nome = request.Nome;
             promotor.CPF = cpfLimpo;
             promotor.Telefone = request.Telefone ?? promotor.Telefone;
             promotor.Email = request.Email ?? promotor.Email;
-            promotor.Tipo = request.EmpresaId > 0 ? "exclusivo" : "promotor";
-            promotor.EmpresaExclusivaId = request.EmpresaId > 0 ? request.EmpresaId : null;
-            promotor.DiasPermitidos = diasBitmask;
+            promotor.Tipo = tipo;
             promotor.AtualizadoEm = DateTime.UtcNow;
+
+            if (tipo == "exclusivo")
+            {
+                promotor.EmpresaExclusivaId = request.EmpresaId > 0 ? request.EmpresaId : promotor.EmpresaExclusivaId;
+                DesativarVinculos(promotor);
+            }
+            else
+            {
+                promotor.EmpresaExclusivaId = null;
+                if (request.EmpresaId > 0)
+                    GarantirVinculo(promotor, request.EmpresaId, diasPermitidos);
+            }
 
             _context.Promotores.Update(promotor);
             await _context.SaveChangesAsync();
 
-            if (empresaExclusiva != null)
-                promotor.EmpresaExclusiva = empresaExclusiva;
+            if (empresa != null && promotor.EmpresaExclusivaId == empresa.Id)
+                promotor.EmpresaExclusiva = empresa;
 
             return MapearParaResponse(promotor);
         }
@@ -144,8 +156,68 @@ namespace ControlePromotores.Api.Services
             return true;
         }
 
-        private PromotorResponse MapearParaResponse(Promotor promotor)
+        private static string NormalizarCpf(string cpf)
         {
+            return cpf.Replace(".", "").Replace("-", "");
+        }
+
+        private static string NormalizarTipo(string? tipo)
+        {
+            return string.Equals(tipo?.Trim(), "exclusivo", StringComparison.OrdinalIgnoreCase)
+                ? "exclusivo"
+                : "promotor";
+        }
+
+        private static byte ConverterDiasPermitidos(string[]? dias)
+        {
+            if (dias == null || dias.Length == 0)
+                return DiasPermitidosPadrao;
+
+            var bitmask = DiasPermitidosHelper.DiaArrayParaBitmask(dias);
+            if (bitmask <= 0 || bitmask > 127)
+                throw new InvalidOperationException("Dias permitidos invalidos");
+
+            return (byte)bitmask;
+        }
+
+        private static void GarantirVinculo(Promotor promotor, int empresaId, byte diasPermitidos)
+        {
+            var vinculo = promotor.PromotorEmpresas
+                .FirstOrDefault(pe => pe.EmpresaId == empresaId);
+
+            if (vinculo == null)
+            {
+                promotor.PromotorEmpresas.Add(new PromotorEmpresa
+                {
+                    EmpresaId = empresaId,
+                    DiasPermitidos = diasPermitidos,
+                    Ativo = true
+                });
+                return;
+            }
+
+            vinculo.DiasPermitidos = diasPermitidos;
+            vinculo.Ativo = true;
+        }
+
+        private static void DesativarVinculos(Promotor promotor)
+        {
+            foreach (var vinculo in promotor.PromotorEmpresas.Where(pe => pe.Ativo))
+                vinculo.Ativo = false;
+        }
+
+        private static PromotorResponse MapearParaResponse(Promotor promotor)
+        {
+            var vinculosAtivos = promotor.PromotorEmpresas
+                .Where(pe => pe.Ativo)
+                .OrderBy(pe => pe.Id)
+                .ToList();
+
+            var primeiroVinculo = vinculosAtivos.FirstOrDefault();
+            var empresaIds = promotor.EmpresaExclusivaId.HasValue
+                ? new[] { promotor.EmpresaExclusivaId.Value }
+                : vinculosAtivos.Select(pe => pe.EmpresaId).ToArray();
+
             return new PromotorResponse
             {
                 Id = promotor.Id,
@@ -154,8 +226,12 @@ namespace ControlePromotores.Api.Services
                 Telefone = promotor.Telefone,
                 Email = promotor.Email,
                 Tipo = promotor.Tipo,
+                EmpresaId = promotor.EmpresaExclusivaId ?? primeiroVinculo?.EmpresaId,
+                EmpresaIds = empresaIds,
                 EmpresaExclusivaId = promotor.EmpresaExclusivaId,
-                DiasPermitidos = DiasPermitidosHelper.BitmaskParaDiaArray(promotor.DiasPermitidos),
+                DiasPermitidos = primeiroVinculo == null
+                    ? null
+                    : DiasPermitidosHelper.BitmaskParaDiaArray(primeiroVinculo.DiasPermitidos),
                 CriadoEm = promotor.CriadoEm,
                 AtualizadoEm = promotor.AtualizadoEm,
                 Ativo = promotor.Ativo

@@ -84,17 +84,15 @@ namespace ControlePromotores.Api.BD
                     .HasColumnName("ativo");
 
                 entity.Property(e => e.CriadoEm)
-                    .HasColumnType("TEXT")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnName("criado_em");
 
                 entity.Property(e => e.AtualizadoEm)
-                    .HasColumnType("TEXT")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnName("atualizado_em");
 
-                // Tipo TEXT + DEFAULT CURRENT_TIMESTAMP: Compatibilidade SQLite (desenvolvimento) e MySQL/MariaDB (produção).
-                // Auditoria: Registra automaticamente timestamps de criação e última atualização via banco de dados.
+                // DEFAULT CURRENT_TIMESTAMP: deixa cada provider mapear DateTime para seu tipo nativo.
+                // Auditoria: registra automaticamente timestamps de criação e última atualização via banco de dados.
 
                 // Relacionamentos
                 // Política DeleteBehavior.Restrict: Impede deleção de empresa se houver promotores exclusivos vinculados.
@@ -169,12 +167,10 @@ namespace ControlePromotores.Api.BD
                     .HasColumnName("ativo");
 
                 entity.Property(u => u.CriadoEm)
-                    .HasColumnType("TEXT")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnName("criado_em");
 
                 entity.Property(u => u.AtualizadoEm)
-                    .HasColumnType("TEXT")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnName("atualizado_em");
 
@@ -242,12 +238,10 @@ namespace ControlePromotores.Api.BD
                     .HasColumnName("ativo");
 
                 entity.Property(p => p.CriadoEm)
-                    .HasColumnType("TEXT")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnName("criado_em");
 
                 entity.Property(p => p.AtualizadoEm)
-                    .HasColumnType("TEXT")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnName("atualizado_em");
 
@@ -312,7 +306,6 @@ namespace ControlePromotores.Api.BD
                     .HasColumnName("ativo");
 
                 entity.Property(pe => pe.CriadoEm)
-                    .HasColumnType("TEXT")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnName("criado_em");
 
@@ -354,7 +347,6 @@ namespace ControlePromotores.Api.BD
 
                 entity.Property(r => r.DataHora)
                     .IsRequired()
-                    .HasColumnType("TEXT")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnName("data_hora");
 
@@ -428,7 +420,6 @@ namespace ControlePromotores.Api.BD
                     .HasColumnName("caminho");
 
                 entity.Property(pd => pd.EnviadoEm)
-                    .HasColumnType("TEXT")
                     .HasDefaultValueSql("CURRENT_TIMESTAMP")
                     .HasColumnName("enviado_em");
 

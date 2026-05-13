@@ -40,10 +40,8 @@ namespace ControlePromotores.Api.Services
             if (usuario == null)
                 throw new KeyNotFoundException("Usuário não encontrado.");
 
-            // Validação de dias permitidos: Verifica se o promotor tem permissão de trabalhar neste dia da semana.
             var hoje = DateTime.UtcNow;
-            if (!DiasPermitidosHelper.IsDiaPermitido(promotor.DiasPermitidos, hoje.DayOfWeek))
-                throw new InvalidOperationException($"Promotor não tem autorização para trabalhar em {hoje:dddd}");
+            await ValidarVinculoEDiasPermitidosAsync(promotor, empresaId, hoje.DayOfWeek);
 
             var hojeData = hoje.Date;
 
@@ -230,6 +228,29 @@ namespace ControlePromotores.Api.Services
                 .FirstAsync(r => r.Id == registroId);
 
             return MapearParaResponse(registro);
+        }
+
+        private async Task ValidarVinculoEDiasPermitidosAsync(Promotor promotor, int empresaId, DayOfWeek diaSemana)
+        {
+            if (string.Equals(promotor.Tipo, "exclusivo", StringComparison.OrdinalIgnoreCase))
+            {
+                if (promotor.EmpresaExclusivaId != empresaId)
+                    throw new InvalidOperationException("Promotor exclusivo nao possui vinculo com esta empresa.");
+
+                return;
+            }
+
+            var vinculo = await _context.PromotoresEmpresas
+                .FirstOrDefaultAsync(pe => pe.PromotorId == promotor.Id && pe.EmpresaId == empresaId);
+
+            if (vinculo == null)
+                throw new InvalidOperationException("Promotor nao possui vinculo com esta empresa.");
+
+            if (!vinculo.Ativo)
+                throw new InvalidOperationException("Vinculo do promotor com esta empresa esta inativo.");
+
+            if (!DiasPermitidosHelper.IsDiaPermitido(vinculo.DiasPermitidos, diaSemana))
+                throw new InvalidOperationException("Promotor nao tem autorizacao para trabalhar neste dia.");
         }
 
         private RegistroResponse MapearParaResponse(Registro registro)
