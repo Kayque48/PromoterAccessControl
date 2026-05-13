@@ -29,6 +29,29 @@ async function carregarEmpresas() {
     }
 }
 
+function getInputValue(id) {
+    return document.getElementById(id)?.value.trim() || '';
+}
+
+function formatarCNPJ(cnpj) {
+    const digits = cnpj.replace(/\D/g, '');
+    if (digits.length !== 14) return cnpj.trim();
+
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+}
+
+function montarEnderecoConsolidado() {
+    const logradouro = getInputValue('logradouroEmpresa');
+    const numero = getInputValue('numeroEmpresa');
+    const cidade = getInputValue('cidadeEmpresa');
+    const estado = getInputValue('estadoEmpresa');
+    const complemento = getInputValue('complementoEmpresa');
+
+    return [logradouro, numero, cidade, estado, complemento]
+        .filter(Boolean)
+        .join(', ');
+}
+
 function renderizarEmpresas() {
     const tbody = document.getElementById('tbodyEmpresas');
     if (!tbody) return;
@@ -43,7 +66,7 @@ function renderizarEmpresas() {
             <td>${empresa.nomeFantasia || '-'}</td>
             <td>${empresa.telefone || '-'}</td>
             <td>${empresa.email || '-'}</td>
-            <td>${empresa.logradouro || '-'}</td>
+            <td>${empresa.endereco || '-'}</td>
             <td>
                 <button class="btn btn-sm btn-edit" onclick="editarEmpresa(${empresa.id})">Editar</button>
                 <button class="btn btn-sm btn-delete" onclick="deletarEmpresa(${empresa.id})">Deletar</button>
@@ -57,15 +80,20 @@ async function handleSalvarEmpresa(e) {
     e.preventDefault();
     
     const id = document.getElementById('empresaId').value;
+    const endereco = montarEnderecoConsolidado();
+
+    if (!endereco) {
+        alert('Informe o endereço da empresa');
+        return;
+    }
+
     const data = {
-        cnpj: document.getElementById('cnpj').value,
-        razaoSocial: document.getElementById('razaoSocial').value,
-        nomeFantasia: document.getElementById('nomeFantasia').value,
-        telefone: document.getElementById('telefoneEmpresa').value,
-        email: document.getElementById('emailEmpresa').value,
-        logradouro: document.getElementById('logradouroEmpresa').value,
-        numero: document.getElementById('numeroEmpresa').value,
-        complemento: document.getElementById('complementoEmpresa').value
+        cnpj: formatarCNPJ(getInputValue('cnpj')),
+        razaoSocial: getInputValue('razaoSocial'),
+        nomeFantasia: getInputValue('nomeFantasia'),
+        telefone: getInputValue('telefoneEmpresa'),
+        email: getInputValue('emailEmpresa'),
+        endereco
     };
     
     try {
@@ -97,9 +125,11 @@ async function editarEmpresa(id) {
         document.getElementById('nomeFantasia').value = empresa.nomeFantasia || '';
         document.getElementById('telefoneEmpresa').value = empresa.telefone || '';
         document.getElementById('emailEmpresa').value = empresa.email || '';
-        document.getElementById('logradouroEmpresa').value = empresa.logradouro || '';
-        document.getElementById('numeroEmpresa').value = empresa.numero || '';
-        document.getElementById('complementoEmpresa').value = empresa.complemento || '';
+        document.getElementById('logradouroEmpresa').value = empresa.endereco || '';
+        document.getElementById('numeroEmpresa').value = '';
+        document.getElementById('cidadeEmpresa').value = '';
+        document.getElementById('estadoEmpresa').value = '';
+        document.getElementById('complementoEmpresa').value = '';
     } catch (error) {
         console.error('Erro ao editar:', error);
     }
