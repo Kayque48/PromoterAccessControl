@@ -201,18 +201,21 @@ async function deleteEmpresa(id) {
 }
 
 // Registros de Acesso
-async function getRegistrosAcesso() {
-    return await apiGet('/registrosacesso');
+// Retorna lista de promotores ATIVOS (com entrada registrada, sem saída)
+async function getRegistrosAtivos() {
+    return await apiGet('/registrosacesso/ativos');
 }
 
+// Registra entrada de um promotor
 async function registrarEntrada(promotorId, empresaId) {
     const usuarioId = parseInt(getCurrentUser()?.id || '', 10);
     return await apiPost('/registrosacesso/entrada', { promotorId, empresaId, usuarioId });
 }
 
-async function registrarSaida(registroId) {
+// Registra saída de um promotor. Requer promotorId + empresaId (não registroId)
+async function registrarSaida(promotorId, empresaId) {
     const usuarioId = parseInt(getCurrentUser()?.id || '', 10);
-    return await apiPost(`/registrosacesso/${registroId}/saida`, { usuarioId });
+    return await apiPost('/registrosacesso/saida', { promotorId, empresaId, usuarioId });
 }
 
 // Relatórios

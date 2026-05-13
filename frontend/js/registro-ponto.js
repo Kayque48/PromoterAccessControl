@@ -1,1 +1,144 @@
-// registro-ponto.js - Gerencia registro de ponto\n\nlet registrosAbertos = [];\n\ndocument.addEventListener('DOMContentLoaded', async function() {\n    // Verifica autenticação\n    requireAuth();\n    \n    // Carrega promotores\n    await carregarPromotoresSelect();\n    \n    // Carrega registros abertos\n    await carregarRegistrosAbertos();\n    \n    // Listeners\n    const btnEntrada = document.getElementById('btnEntrada');\n    if (btnEntrada) {\n        btnEntrada.addEventListener('click', handleRegistrarEntrada);\n    }\n});\n\nasync function carregarPromotoresSelect() {\n    try {\n        const promotores = await getPromotores();\n        const select = document.getElementById('promotor');\n        if (select) {\n            promotores.forEach(prom => {\n                const option = document.createElement('option');\n                option.value = prom.id;\n                option.textContent = prom.nome;\n                select.appendChild(option);\n            });\n        }\n    } catch (error) {\n        console.error('Erro ao carregar promotores:', error);\n    }\n}\n\nasync function handleRegistrarEntrada() {\n    const promoterSelect = document.getElementById('promotor');\n    const promoterId = promoterSelect.value;\n    \n    if (!promoterId) {\n        alert('Selecione um promotor');\n        return;\n    }\n    \n    try {\n        // Obtém empresa do promotor (você pode precisar adicionar isso)\n        const promoter = await getPromotor(promoterId);\n        const empresaId = promoter.empresaId;\n        \n        const resultado = await registrarEntrada(promoterId, empresaId);\n        \n        alert('Entrada registrada com sucesso!');\n        promoterSelect.value = '';\n        \n        // Recarrega registros\n        await carregarRegistrosAbertos();\n    } catch (error) {\n        console.error('Erro ao registrar entrada:', error);\n        alert('Erro ao registrar entrada');\n    }\n}\n\nasync function carregarRegistrosAbertos() {\n    try {\n        const registros = await getRegistrosAcesso();\n        registrosAbertos = registros.filter(r => !r.saida); // Apenas os que não têm saída\n        renderizarRegistrosAbertos();\n    } catch (error) {\n        console.error('Erro ao carregar registros:', error);\n    }\n}\n\nfunction renderizarRegistrosAbertos() {\n    const container = document.getElementById('listaRegistrosAbertos');\n    if (!container) return;\n    \n    if (registrosAbertos.length === 0) {\n        container.innerHTML = '<p class=\"text-muted\">Nenhum promotor em atendimento no momento.</p>';\n        return;\n    }\n    \n    container.innerHTML = '';\n    \n    const tabela = document.createElement('div');\n    tabela.className = 'table-responsive';\n    tabela.innerHTML = `\n        <table class=\"table table-hover mb-0\">\n            <thead>\n                <tr>\n                    <th>Promotor</th>\n                    <th>Entrada</th>\n                    <th>Duração</th>\n                    <th>Ação</th>\n                </tr>\n            </thead>\n            <tbody>\n                ${registrosAbertos.map(reg => `\n                    <tr>\n                        <td>${reg.promotorNome}</td>\n                        <td>${new Date(reg.entrada).toLocaleTimeString('pt-BR')}</td>\n                        <td>${calcularDuracao(reg.entrada)}</td>\n                        <td>\n                            <button class=\"btn btn-sm btn-primary\" onclick="handleSaida(${reg.id})"\">Saída</button>\n                        </td>\n                    </tr>\n                `).join('')}\n            </tbody>\n        </table>\n    `;\n    \n    container.appendChild(tabela);\n}\n\nasync function handleSaida(registroId) {\n    if (!confirm('Registrar saída?')) return;\n    \n    try {\n        await registrarSaida(registroId);\n        alert('Saída registrada com sucesso!');\n        await carregarRegistrosAbertos();\n    } catch (error) {\n        console.error('Erro ao registrar saída:', error);\n        alert('Erro ao registrar saída');\n    }\n}\n\nfunction calcularDuracao(entrada) {\n    const agora = new Date();\n    const entradaDate = new Date(entrada);\n    const diff = agora - entradaDate;\n    \n    const horas = Math.floor(diff / 3600000);\n    const minutos = Math.floor((diff % 3600000) / 60000);\n    \n    return `${horas}h ${minutos}m`;\n}\n
+// registro-ponto.js - Gerencia registro de ponto
+
+let registrosAbertos = [];
+
+document.addEventListener('DOMContentLoaded', async function() {
+    // Verifica autenticação
+    requireAuth();
+
+    // Carrega promotores
+    await carregarPromotoresSelect();
+
+    // Carrega registros abertos
+    await carregarRegistrosAbertos();
+
+    // Listeners
+    const btnEntrada = document.getElementById('btnEntrada');
+    if (btnEntrada) {
+        btnEntrada.addEventListener('click', handleRegistrarEntrada);
+    }
+});
+
+async function carregarPromotoresSelect() {
+    try {
+        const promotores = await getPromotores();
+        const select = document.getElementById('promotor');
+        if (select) {
+            promotores.forEach(prom => {
+                const option = document.createElement('option');
+                option.value = prom.id;
+                option.textContent = prom.nome;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Erro ao carregar promotores:', error);
+    }
+}
+
+async function handleRegistrarEntrada() {
+    const promoterSelect = document.getElementById('promotor');
+    const promoterId = parseInt(promoterSelect.value, 10);
+
+    if (Number.isNaN(promoterId)) {
+        alert('Selecione um promotor');
+        return;
+    }
+
+    try {
+        // Obtém empresa do promotor
+        const promoter = await getPromotor(promoterId);
+        const empresaId = parseInt(promoter.empresaId, 10);
+
+        if (Number.isNaN(empresaId)) {
+            alert('Promotor sem empresa vinculada');
+            return;
+        }
+
+        await registrarEntrada(promoterId, empresaId);
+
+        alert('Entrada registrada com sucesso!');
+        promoterSelect.value = '';
+
+        // Recarrega registros
+        await carregarRegistrosAbertos();
+    } catch (error) {
+        console.error('Erro ao registrar entrada:', error);
+        alert('Erro ao registrar entrada');
+    }
+}
+
+async function carregarRegistrosAbertos() {
+    try {
+        const registros = await getRegistrosAtivos();
+        registrosAbertos = registros;
+        renderizarRegistrosAbertos();
+    } catch (error) {
+        console.error('Erro ao carregar registros:', error);
+    }
+}
+
+function renderizarRegistrosAbertos() {
+    const container = document.getElementById('listaRegistrosAbertos');
+    if (!container) return;
+
+    if (registrosAbertos.length === 0) {
+        container.innerHTML = '<p class="text-muted">Nenhum promotor em atendimento no momento.</p>';
+        return;
+    }
+
+    container.innerHTML = '';
+
+    const tabela = document.createElement('div');
+    tabela.className = 'table-responsive';
+    tabela.innerHTML = `
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Promotor</th>
+                    <th>Entrada</th>
+                    <th>Duração</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${registrosAbertos.map(reg => `
+                    <tr>
+                        <td>${reg.promotorNome}</td>
+                        <td>${new Date(reg.entradaEm).toLocaleTimeString('pt-BR')}</td>
+                        <td>${calcularDuracao(reg.entradaEm)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="handleSaida(${reg.promotorId}, ${reg.empresaId})">Saída</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+
+    container.appendChild(tabela);
+}
+
+async function handleSaida(promotorId, empresaId) {
+    if (!confirm('Registrar saída?')) return;
+
+    try {
+        await registrarSaida(promotorId, empresaId);
+        alert('Saída registrada com sucesso!');
+        await carregarRegistrosAbertos();
+    } catch (error) {
+        console.error('Erro ao registrar saída:', error);
+        alert('Erro ao registrar saída');
+    }
+}
+
+function calcularDuracao(entrada) {
+    const agora = new Date();
+    const entradaDate = new Date(entrada);
+    const diff = agora - entradaDate;
+
+    const horas = Math.floor(diff / 3600000);
+    const minutos = Math.floor((diff % 3600000) / 60000);
+
+    return `${horas}h ${minutos}m`;
+}
