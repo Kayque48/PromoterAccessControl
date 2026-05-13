@@ -1,237 +1,138 @@
-let chartFrequencia = null;
-let chartTempo = null;
-let ultimoRegistroNome = null;
+// exportar.js - Gerencia exportação de dados
 
-document.addEventListener('DOMContentLoaded', () => {
-    carregarEmpresas();
-    document.getElementById('empresaFiltro').addEventListener('change', carregarPromotores);
-    document.getElementById('btnGerarRelatorio').addEventListener('click', gerarRelatorio);
-    document.getElementById('btnExportarCSV').addEventListener('click', exportarCSV);
+document.addEventListener('DOMContentLoaded', async function() {
+    requireAuth();
+    
+    await carregarFiltros();
+    
+    const btnGerar = document.getElementById('btnGerarRelatorio');
+    if (btnGerar) {
+        btnGerar.addEventListener('click', gerarRelatorio);
+    }
+    
+    const btnExportar = document.getElementById('btnExportarCSV');
+    if (btnExportar) {
+        btnExportar.addEventListener('click', exportarArquivo);
+    }
+    
+    const btnResetar = document.getElementById('btnResetar');
+    if (btnResetar) {
+        btnResetar.addEventListener('click', resetarFiltros);
+    }
 });
 
-async function carregarEmpresas() {
+async function carregarFiltros() {
     try {
-        const empresas = await apiRequest('/promotores/empresas');
-        const filtro = document.getElementById('empresaFiltro');
-        filtro.innerHTML = '<option value="">Todas</option>';
-        empresas.forEach(emp => {
-            filtro.innerHTML += `<option value="${emp.id}">${emp.nome}</option>`;
-        });
-        await carregarPromotores();
+        const empresas = await getEmpresas();
+        const selectEmpresa = document.getElementById('empresaFiltro');
+        if (selectEmpresa) {
+            empresas.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = emp.id;
+                option.textContent = emp.nomeFantasia || emp.razaoSocial;
+                selectEmpresa.appendChild(option);
+            });
+        }
+        
+        const promotores = await getPromotores();
+        const selectPromotor = document.getElementById('promotorFiltro');
+        if (selectPromotor) {
+            promotores.forEach(prom => {
+                const option = document.createElement('option');
+                option.value = prom.id;
+                option.textContent = prom.nome;
+                selectPromotor.appendChild(option);
+            });
+        }
     } catch (error) {
-        mostrarMensagem('Erro ao carregar empresas: ' + error.message, 'danger');
+        console.error('Erro ao carregar filtros:', error);
     }
-}
-
-async function carregarPromotores() {
-    try {
-        const empresaId = document.getElementById('empresaFiltro').value;
-        const promotores = await apiRequest(`/promotores${empresaId ? '?empresaId=' + empresaId : ''}`);
-        const filtro = document.getElementById('promotorFiltro');
-        filtro.innerHTML = '<option value="">Todos</option>';
-        promotores.forEach(p => {
-            filtro.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
-        });
-    } catch (error) {
-        mostrarMensagem('Erro ao carregar promotores: ' + error.message, 'danger');
-    }
-}
-
-function mostrarMensagem(texto, tipo) {
-    const div = document.getElementById('mensagemExportar');
-    div.textContent = texto;
-    div.className = `alert alert-${tipo}`;
-    setTimeout(() => { div.textContent = ''; div.className = ''; }, 5000);
 }
 
 async function gerarRelatorio() {
-    const dataInicio = document.getElementById('dataInicio').value;
-    const dataFim = document.getElementById('dataFim').value;
-    const empresaId = document.getElementById('empresaFiltro').value;
-    const promotorId = document.getElementById('promotorFiltro').value;
-
-    const params = new URLSearchParams();
-    if (dataInicio) params.append('dataInicio', dataInicio);
-    if (dataFim) params.append('dataFim', dataFim);
-    if (empresaId) params.append('empresaId', empresaId);
-    if (promotorId) params.append('promotorId', promotorId);
-
     try {
-        const registros = await apiRequest(`/registros?${params.toString()}`);
-        if (!Array.isArray(registros) || registros.length === 0) {
-            mostrarMensagem('Nenhum registro encontrado para o filtro.', 'warning');
-            document.getElementById('indicadoresRelatorio').style.display = 'none';
-            document.getElementById('graficosRelatorio').style.display = 'none';
-            document.getElementById('tabelaRelatorioCard').style.display = 'none';
-            return;
-        }
-
-        montarIndicadores(registros);
-        montarTabela(registros);
-        montarGraficos(registros);
-        document.getElementById('indicadoresRelatorio').style.display = 'flex';
-        document.getElementById('graficosRelatorio').style.display = 'block';
+        const filtros = obterFiltros();
+        const relatorio = await getRelatorio(filtros);
+        
+        mostrarIndicadores(relatorio);
+        renderizarRelatorio(relatorio);
+        
+        document.getElementById('indicadoresRelatorio').style.display = 'grid';
+        document.getElementById('graficosRelatorio').style.display = 'grid';
         document.getElementById('tabelaRelatorioCard').style.display = 'block';
-        ultimoRegistroNome = `${dataInicio || 'inicio'}_${dataFim || 'fim'}_${empresaId || 'all'}_${promotorId || 'all'}`;
-
-        if (promotorId) {
-            const select = document.getElementById('promotorFiltro');
-            const option = select.options[select.selectedIndex];
-            const promotor = option ? option.text : 'Todos';
-            gerarAnalisedeFrequencia(registros, promotor);
-        } else {
-            gerarAnalisedeFrequencia(registros, 'Todos');
-        }
-
     } catch (error) {
-        mostrarMensagem('Erro ao gerar relatório: ' + error.message, 'danger');
+        console.error('Erro ao gerar relatório:', error);
+        alert('Erro ao gerar relatório');
     }
 }
 
-function montarIndicadores(registros) {
-    const total = registros.length;
-    const mediaHoras = registros.reduce((soma, r) => {
-        const dur = r.duracao ? parseDuracao(r.duracao) : 0;
-        return soma + dur;
-    }, 0) / total;
-
-    const diasDistintos = new Set(registros.map(r => r.data)).size;
-    const diasPossiveis = taxaDiasUteis(document.getElementById('dataInicio').value, document.getElementById('dataFim').value);
-    const consistencia = diasPossiveis > 0 ? Math.round((diasDistintos / diasPossiveis) * 100) : 0;
-
-    document.getElementById('totalRegistros').textContent = total;
-    document.getElementById('mediaHoras').textContent = `${mediaHoras.toFixed(1)}h`;
-    document.getElementById('diasFrequentados').textContent = diasDistintos;
-    document.getElementById('consistencia').textContent = `${consistencia}%`;
+function obterFiltros() {
+    return {
+        dataInicio: document.getElementById('dataInicio').value,
+        dataFim: document.getElementById('dataFim').value,
+        empresaId: document.getElementById('empresaFiltro').value || null,
+        promotorId: document.getElementById('promotorFiltro').value || null
+    };
 }
 
-function parseDuracao(duracao) {
-    const partes = duracao.match(/(\d+)h\s*(\d+)?/);
-    if (!partes) return 0;
-    const horas = parseInt(partes[1], 10);
-    const minutos = partes[2] ? parseInt(partes[2], 10) : 0;
-    return horas + minutos / 60;
+function mostrarIndicadores(relatorio) {
+    document.getElementById('totalRegistros').textContent = relatorio.totalRegistros || 0;
+    document.getElementById('mediaHoras').textContent = (relatorio.mediaHoras || 0).toFixed(1) + 'h';
+    document.getElementById('diasFrequentados').textContent = relatorio.diasFrequentados || 0;
+    document.getElementById('consistencia').textContent = (relatorio.consistencia || 0).toFixed(0) + '%';
 }
 
-function taxaDiasUteis(dataInicio, dataFim) {
-    const i = new Date(dataInicio);
-    const f = new Date(dataFim);
-    if (isNaN(i) || isNaN(f) || i > f) return 0;
-    let dias = 0;
-    for (let d = new Date(i); d <= f; d.setDate(d.getDate() + 1)) {
-        const n = d.getDay();
-        if (n !== 0 && n !== 6) dias++;
-    }
-    return dias;
-}
-
-function montarTabela(registros) {
+function renderizarRelatorio(relatorio) {
     const tbody = document.getElementById('tbodyRelatorio');
+    if (!tbody || !relatorio.registros) return;
+    
     tbody.innerHTML = '';
-    registros.forEach(r => {
+    
+    relatorio.registros.forEach(reg => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${r.promotor}</td>
-            <td>${r.empresa}</td>
-            <td>${r.data}</td>
-            <td>${r.diaSemana}</td>
-            <td>${r.entrada}</td>
-            <td>${r.saida || '-'}</td>
-            <td>${r.duracao || '-'}</td>
+            <td>${reg.promotorNome}</td>
+            <td>${reg.empresaNome}</td>
+            <td>${new Date(reg.data).toLocaleDateString('pt-BR')}</td>
+            <td>${getDiaSemana(reg.data)}</td>
+            <td>${new Date(reg.entrada).toLocaleTimeString('pt-BR')}</td>
+            <td>${reg.saida ? new Date(reg.saida).toLocaleTimeString('pt-BR') : '-'}</td>
+            <td>${reg.duracao || '-'}</td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-function montarGraficos(registros) {
-    const frequenciaPorDia = {}; 
-    const tempoPorPromotor = {}; 
-    registros.forEach(r => {
-        frequenciaPorDia[r.diaSemana] = (frequenciaPorDia[r.diaSemana] || 0) + 1;
-        const dur = r.duracao ? parseDuracao(r.duracao) : 0;
-        if (!tempoPorPromotor[r.promotor]) tempoPorPromotor[r.promotor] = { soma: 0, cont: 0 };
-        tempoPorPromotor[r.promotor].soma += dur;
-        tempoPorPromotor[r.promotor].cont += 1;
-    });
-
-    const labelsFreq = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-    const dataFreq = labelsFreq.map(d => frequenciaPorDia[d] || 0);
-
-    const ctxFreq = document.getElementById('graficoFrequencia').getContext('2d');
-    if (chartFrequencia) chartFrequencia.destroy();
-    chartFrequencia = new Chart(ctxFreq, {
-        type: 'bar',
-        data: { labels: labelsFreq, datasets: [{ label: 'Visitas', data: dataFreq, backgroundColor: '#3b82f6' }] },
-        options: { scales: { y: { beginAtZero: true } } }
-    });
-
-    const labelsTempo = Object.keys(tempoPorPromotor);
-    const dataTempo = labelsTempo.map(k => (tempoPorPromotor[k].soma / Math.max(1, tempoPorPromotor[k].cont)).toFixed(2));
-    const ctxTempo = document.getElementById('graficoTempo').getContext('2d');
-    if (chartTempo) chartTempo.destroy();
-    chartTempo = new Chart(ctxTempo, {
-        type: 'line',
-        data: { labels: labelsTempo, datasets: [{ label: 'Horas médias', data: dataTempo, borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.1)', fill: true, tension: 0.3 }] },
-        options: { scales: { y: { beginAtZero: true } } }
-    });
-}
-
-function gerarAnalisedeFrequencia(registros, promotorNome) {
-    const mapa = {};
-    registros.forEach(r => {
-        if (!mapa[r.diaSemana]) mapa[r.diaSemana] = 0;
-        mapa[r.diaSemana]++;
-    });
-    let regras = 'Frequência por dia: ';
-    for (const k of ['Segunda','Terça','Quarta','Quinta','Sexta']) {
-        regras += `${k}: ${mapa[k] || 0}; `;
-    }
-    mostrarMensagem(`Relatório para ${promotorNome}. ${regras}`, 'success');
-}
-
-async function exportarCSV() {
-    if (!document.getElementById('tabelaRelatorioCard').style.display || document.getElementById('tabelaRelatorioCard').style.display === 'none') {
-        mostrarMensagem('Gere o relatório antes de exportar.', 'warning');
-        return;
-    }
-
-    const dataInicio = document.getElementById('dataInicio').value;
-    const dataFim = document.getElementById('dataFim').value;
-    const empresaId = document.getElementById('empresaFiltro').value;
-    const promotorId = document.getElementById('promotorFiltro').value;
-
-    const params = new URLSearchParams();
-    if (dataInicio) params.append('dataInicio', dataInicio);
-    if (dataFim) params.append('dataFim', dataFim);
-    if (empresaId) params.append('empresaId', empresaId);
-    if (promotorId) params.append('promotorId', promotorId);
-
+async function exportarArquivo() {
     try {
-        const registros = await apiRequest(`/registros?${params.toString()}`);
-        if (!Array.isArray(registros) || registros.length === 0) {
-            mostrarMensagem('Nenhum registro para exportar.', 'warning');
-            return;
-        }
-
-        const headers = ['Promotor', 'Empresa', 'Data', 'DiaSemana', 'Entrada', 'Saida', 'Duracao'];
-        const linhas = [headers.join(',')];
-        registros.forEach(r => {
-            const row = [r.promotor, r.empresa, r.data, r.diaSemana, r.entrada, r.saida || '', r.duracao || ''];
-            linhas.push(row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
-        });
-
-        const csv = linhas.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const filtros = obterFiltros();
+        const blob = await exportarCSV(filtros);
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `relatorio-e-exportar-${dataInicio || 'inicio'}-${dataFim || 'fim'}.csv`;
-        link.style.display = 'none';
+        link.href = url;
+        link.download = 'relatorio.csv';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-
-        mostrarMensagem('CSV exportado com sucesso.', 'success');
+        URL.revokeObjectURL(url);
     } catch (error) {
-        mostrarMensagem('Erro ao exportar CSV: ' + error.message, 'danger');
+        console.error('Erro ao exportar:', error);
+        alert('Erro ao exportar CSV');
     }
+}
+
+function resetarFiltros() {
+    document.getElementById('dataInicio').value = '';
+    document.getElementById('dataFim').value = '';
+    document.getElementById('empresaFiltro').value = '';
+    document.getElementById('promotorFiltro').value = '';
+    
+    document.getElementById('indicadoresRelatorio').style.display = 'none';
+    document.getElementById('graficosRelatorio').style.display = 'none';
+    document.getElementById('tabelaRelatorioCard').style.display = 'none';
+}
+
+function getDiaSemana(data) {
+    const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    return dias[new Date(data).getDay()];
 }
