@@ -105,6 +105,11 @@ function getTipoSelecionado() {
     return categoria.toLowerCase().includes('exclusivo') ? 'exclusivo' : 'promotor';
 }
 
+function isPromotorExclusivo(promotor) {
+    const tipo = String(promotor.tipo || '').toLowerCase();
+    return tipo.includes('exclusivo') || !!promotor.empresaExclusivaId;
+}
+
 function getEmpresaIdPrincipal(promotor) {
     if (promotor.empresaId) return promotor.empresaId;
     if (promotor.empresaExclusivaId) return promotor.empresaExclusivaId;
@@ -138,6 +143,31 @@ function formatarTipoPromotor(tipo) {
     return tipo === 'exclusivo' ? 'Promotor Exclusivo' : 'Promotor';
 }
 
+function setModoFormularioPromotor(editando) {
+    const titulo = document.getElementById('modalPromotorLabel');
+    const btnSalvar = document.getElementById('btnSalvar');
+    const btnSalvarTopo = document.getElementById('btnSalvarEmpresa');
+
+    if (titulo) titulo.textContent = editando ? 'Editar Promotor' : 'Novo Promotor';
+    if (btnSalvar) btnSalvar.textContent = editando ? 'Salvar alterações' : 'Cadastrar';
+    if (btnSalvarTopo) btnSalvarTopo.textContent = editando ? 'Salvar alterações' : 'Salvar';
+}
+
+function preencherFormularioPromotor(promotor) {
+    document.getElementById('promotorId').value = promotor.id || '';
+    document.getElementById('nome').value = promotor.nome || '';
+    document.getElementById('empresa').value = getEmpresaIdPrincipal(promotor);
+    document.getElementById('cpf').value = aplicarMascaraCPF(promotor.cpf || '');
+    document.getElementById('categoria').value = isPromotorExclusivo(promotor)
+        ? 'Promotor Exclusivo'
+        : 'Promotor';
+    document.getElementById('telefone').value = promotor.telefone || '';
+    document.getElementById('email').value = promotor.email || '';
+    setDiasPermitidosSelecionados(promotor.diasPermitidos);
+
+    document.getElementById('cpf').classList.remove('erro', 'sucesso');
+}
+
 async function carregarPromotores() {
     try {
         promotoresLista = await getPromotores();
@@ -169,8 +199,8 @@ function renderizarPromotores() {
                         <small><strong>Dias:</strong> ${formatarDiasPermitidos(promotor.diasPermitidos)}</small>
                     </p>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-edit" onclick="editarPromotor(${promotor.id})">Editar</button>
-                        <button class="btn btn-sm btn-delete" onclick="deletarPromotor(${promotor.id})">Deletar</button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editarPromotor(${promotor.id})">Editar</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="deletarPromotor(${promotor.id})">Deletar</button>
                     </div>
                 </div>
             </div>
@@ -184,26 +214,25 @@ function limparFormularioPromotor() {
     document.getElementById('promotorId').value = '';
     document.getElementById('categoria').value = 'Promotor';
     setDiasPermitidosSelecionados(['segunda', 'ter\u00e7a', 'quarta', 'quinta', 'sexta']);
+    setModoFormularioPromotor(false);
+    document.getElementById('cpf').classList.remove('erro', 'sucesso');
 }
 
 async function editarPromotor(id) {
     try {
+        if (empresasPromotorLista.length === 0) {
+            await carregarEmpresasSelectPromotor();
+        }
+
         const promotor = await getPromotor(id);
-        document.getElementById('promotorId').value = promotor.id;
-        document.getElementById('nome').value = promotor.nome;
-        document.getElementById('empresa').value = getEmpresaIdPrincipal(promotor);
-        document.getElementById('cpf').value = aplicarMascaraCPF(promotor.cpf);
-        document.getElementById('categoria').value = promotor.tipo === 'exclusivo' || promotor.empresaExclusivaId
-            ? 'Promotor Exclusivo'
-            : 'Promotor';
-        document.getElementById('telefone').value = promotor.telefone || '';
-        document.getElementById('email').value = promotor.email || '';
-        setDiasPermitidosSelecionados(promotor.diasPermitidos);
-        
-        const modal = new bootstrap.Modal(document.getElementById('modalPromotor'));
-        modal.show();
+        preencherFormularioPromotor(promotor);
+        setModoFormularioPromotor(true);
+
+        const modalEl = document.getElementById('modalPromotor');
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
     } catch (error) {
         console.error('Erro ao editar:', error);
+        alert('Erro ao carregar promotor para edição');
     }
 }
 
@@ -325,9 +354,10 @@ async function handleSalvarPromotor(e) {
 
     const cpfInput = document.getElementById("cpf");
     const cpf = cpfInput.value;
+    const cpfDigits = cpf.replace(/\D/g, '');
 
-    // Valida antes de salvar
-    if (!validarCPF(cpf)) {
+    // O backend valida o formato 000.000.000-00.
+    if (cpfDigits.length !== 11) {
         cpfInput.classList.add("erro");
         cpfInput.focus();
         return;
@@ -343,6 +373,7 @@ async function handleSalvarPromotor(e) {
 
     const cpfFormatado = aplicarMascaraCPF(cpf);
     cpfInput.value = cpfFormatado;
+    cpfInput.classList.remove("erro");
 
     const data = {
         nome: document.getElementById('nome').value.trim(),
@@ -371,3 +402,6 @@ async function handleSalvarPromotor(e) {
         alert('Erro ao salvar promotor');
     }
 }
+
+window.editarPromotor = editarPromotor;
+window.deletarPromotor = deletarPromotor;
