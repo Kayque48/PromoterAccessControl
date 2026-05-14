@@ -9,15 +9,15 @@ namespace ControlePromotores.Api.Models
 
         [Required]
         public int PromotorId { get; set; }
-        public Promotor Promotor { get; set; }
+        public Promotor Promotor { get; set; } = null!;
 
         [Required]
         public int EmpresaId { get; set; }
-        public Empresa Empresa { get; set; }
+        public Empresa Empresa { get; set; } = null!;
 
         [Required]
         [StringLength(20)] // "entrada" ou "saida"
-        public string Tipo { get; set; }
+        public string Tipo { get; set; } = null!;
 
         [Required]
         public DateTime DataHora { get; set; } = DateTime.UtcNow;
@@ -26,9 +26,9 @@ namespace ControlePromotores.Api.Models
 
         [Required]
         public int RegistradoPor { get; set; }
-        public Usuario UsuarioRegistrador { get; set; }
+        public Usuario UsuarioRegistrador { get; set; } = null!;
 
         [StringLength(255)]
-        public string Observacao { get; set; }
+        public string? Observacao { get; set; }
     }
 }

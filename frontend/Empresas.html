@@ -54,49 +54,49 @@
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label for="cnpj" class="form-label">CNPJ</label>
-                                <input type="text" class="form-control" id="cnpj" required>
+                                <input type="text" class="form-control" id="cnpj" placeholder="00.000.000/0000-00" maxlength="18" inputmode="numeric" autocomplete="off" required>
                             </div>
                             <div class="col-md-4">
                                 <label for="razaoSocial" class="form-label">Razão Social</label>
-                                <input type="text" class="form-control" id="razaoSocial" readonly>
+                                <input type="text" class="form-control" id="razaoSocial" maxlength="150" required>
                             </div>
                             <div class="col-md-4">
                                 <label for="nomeFantasia" class="form-label">Nome Fantasia</label>
-                                <input type="text" class="form-control" id="nomeFantasia">
+                                <input type="text" class="form-control" id="nomeFantasia" maxlength="150">
                             </div>
                             <div class="col-md-4">
                                 <label for="telefoneEmpresa" class="form-label">Telefone</label>
-                                <input type="text" class="form-control" id="telefoneEmpresa" placeholder="+XX (XX) XXXXX-XXXX" maxlength="14">
+                                <input type="text" class="form-control" id="telefoneEmpresa" placeholder="(00) 00000-0000" maxlength="15" inputmode="tel" autocomplete="tel" required>
                             </div>
                             <div class="col-md-4">
                                 <label for="emailEmpresa" class="form-label">Email Corporativo</label>
-                                <input type="email" class="form-control" id="emailEmpresa" placeholder="nome@empresa.com">
+                                <input type="email" class="form-control" id="emailEmpresa" placeholder="nome@empresa.com" maxlength="150" autocomplete="email" required>
                             </div>
                             <div class="col-md-3">
                                 <label for="cepEmpresa" class="form-label">CEP</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="cepEmpresa" placeholder="00000-000" maxlength="9" />
+                                    <input type="text" class="form-control" id="cepEmpresa" placeholder="00000-000" maxlength="9" inputmode="numeric" autocomplete="postal-code" />
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <label for="logradouroEmpresa" class="form-label">Rua</label>
-                                <input type="text" class="form-control" id="logradouroEmpresa" placeholder="Rua/Avenida" readonly>
+                                <input type="text" class="form-control" id="logradouroEmpresa" placeholder="Rua/Avenida" maxlength="120">
                             </div>
                             <div class="col-md-2">
                                 <label for="cidadeEmpresa" class="form-label">Cidade</label>
-                                <input type="text" class="form-control" id="cidadeEmpresa" placeholder="Cidade" readonly>
+                                <input type="text" class="form-control" id="cidadeEmpresa" placeholder="Cidade" maxlength="80">
                             </div>
                             <div class="col-md-2">
                                 <label for="estadoEmpresa" class="form-label">Estado</label>
-                                <input type="text" class="form-control" id="estadoEmpresa" placeholder="Estado" readonly>
+                                <input type="text" class="form-control" id="estadoEmpresa" placeholder="UF" maxlength="2" autocomplete="address-level1">
                             </div>
                             <div class="col-md-2">
                                 <label for="numeroEmpresa" class="form-label">Número</label>
-                                <input type="text" class="form-control" id="numeroEmpresa" placeholder="Número">
+                                <input type="text" class="form-control" id="numeroEmpresa" placeholder="Número" maxlength="6" inputmode="numeric">
                             </div>
                             <div class="col-md-4">
                                 <label for="complementoEmpresa" class="form-label">Complemento</label>
-                                <input type="text" class="form-control" id="complementoEmpresa" placeholder="Apto, bloco, etc.">
+                                <input type="text" class="form-control" id="complementoEmpresa" placeholder="Apto, bloco, etc." maxlength="80">
                             </div>
                         </div>
                         <div class="mt-3">
@@ -112,7 +112,7 @@
                     <h5 class="card-title">Lista de Empresas</h5>
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <input type="text" id="filtroEmpresa" class="form-control" placeholder="Buscar empresa por nome...">
+                            <input type="text" id="filtroEmpresa" class="form-control" placeholder="Buscar por razão social, fantasia, CNPJ ou email...">
                         </div>
                     </div>
                     <div class="table-responsive">

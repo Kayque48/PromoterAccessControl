@@ -358,6 +358,7 @@ namespace ControlePromotores.Api.BD
                     .HasColumnName("registrado_por");
 
                 entity.Property(r => r.Observacao)
+                    .IsRequired(false)
                     .HasMaxLength(255)
                     .HasColumnName("observacao");
 

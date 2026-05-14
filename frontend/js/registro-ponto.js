@@ -2,6 +2,68 @@
 
 let registrosAbertos = [];
 
+function getArrayResponse(response) {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.$values)) return response.$values;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.data)) return response.data;
+    return [];
+}
+
+function getNumberValue(...values) {
+    for (const value of values) {
+        const numberValue = parseInt(value, 10);
+        if (!Number.isNaN(numberValue)) return numberValue;
+    }
+
+    return null;
+}
+
+function getEmpresaIdPromotor(promotor) {
+    const empresaIds = Array.isArray(promotor?.empresaIds)
+        ? promotor.empresaIds
+        : getArrayResponse(promotor?.empresaIds);
+
+    return getNumberValue(
+        promotor?.empresaId,
+        promotor?.empresaExclusivaId,
+        empresaIds[0]
+    );
+}
+
+function normalizarRegistroAtivo(registro = {}) {
+    const entradaEm = registro.entradaEm || registro.entrada || registro.dataHora || registro.EntryTime;
+    const minutosEmAtendimento = getNumberValue(
+        registro.minutosEmAtendimento,
+        registro.minutosAtendimento,
+        registro.duracaoMinutos,
+        registro.permanenciaMin
+    );
+
+    return {
+        promotorId: getNumberValue(registro.promotorId, registro.PromotorId, registro.promoterId),
+        promotorNome: registro.promotorNome || registro.promotorName || registro.nomePromotor || registro.promotor?.nome || '-',
+        empresaId: getNumberValue(registro.empresaId, registro.EmpresaId, registro.companyId),
+        empresaNome: registro.empresaNome || registro.empresaName || registro.nomeEmpresa || registro.empresa?.razaoSocial || registro.empresa?.nomeFantasia || '-',
+        entradaEm,
+        minutosEmAtendimento
+    };
+}
+
+function formatarHorarioEntrada(entradaEm) {
+    const data = new Date(entradaEm);
+    if (Number.isNaN(data.getTime())) return '-';
+    return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatarDuracaoMinutos(totalMinutos) {
+    if (totalMinutos === null || Number.isNaN(totalMinutos)) return null;
+
+    const horas = Math.floor(totalMinutos / 60);
+    const minutos = totalMinutos % 60;
+    return `${horas}h ${minutos}m`;
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     // Verifica autenticação
     requireAuth();
@@ -48,9 +110,9 @@ async function handleRegistrarEntrada() {
     try {
         // Obtém empresa do promotor
         const promoter = await getPromotor(promoterId);
-        const empresaId = parseInt(promoter.empresaId, 10);
+        const empresaId = getEmpresaIdPromotor(promoter);
 
-        if (Number.isNaN(empresaId)) {
+        if (!empresaId) {
             alert('Promotor sem empresa vinculada');
             return;
         }
@@ -71,7 +133,7 @@ async function handleRegistrarEntrada() {
 async function carregarRegistrosAbertos() {
     try {
         const registros = await getRegistrosAtivos();
-        registrosAbertos = registros;
+        registrosAbertos = getArrayResponse(registros).map(normalizarRegistroAtivo);
         renderizarRegistrosAbertos();
     } catch (error) {
         console.error('Erro ao carregar registros:', error);
@@ -102,16 +164,24 @@ function renderizarRegistrosAbertos() {
                 </tr>
             </thead>
             <tbody>
-                ${registrosAbertos.map(reg => `
-                    <tr>
-                        <td>${reg.promotorNome}</td>
-                        <td>${new Date(reg.entradaEm).toLocaleTimeString('pt-BR')}</td>
-                        <td>${calcularDuracao(reg.entradaEm)}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="handleSaida(${reg.promotorId}, ${reg.empresaId})">Saída</button>
-                        </td>
-                    </tr>
-                `).join('')}
+                ${registrosAbertos.map(reg => {
+                    const podeRegistrarSaida = reg.promotorId && reg.empresaId;
+                    const botaoSaida = podeRegistrarSaida
+                        ? `<button class="btn btn-sm btn-primary" onclick="handleSaida(${reg.promotorId}, ${reg.empresaId})">Saída</button>`
+                        : '<button class="btn btn-sm btn-secondary" disabled>Saída</button>';
+
+                    return `
+                        <tr>
+                            <td>
+                                <div>${reg.promotorNome}</div>
+                                <small class="text-muted">${reg.empresaNome}</small>
+                            </td>
+                            <td>${formatarHorarioEntrada(reg.entradaEm)}</td>
+                            <td>${calcularDuracao(reg.entradaEm, reg.minutosEmAtendimento)}</td>
+                            <td>${botaoSaida}</td>
+                        </tr>
+                    `;
+                }).join('')}
             </tbody>
         </table>
     `;
@@ -132,9 +202,14 @@ async function handleSaida(promotorId, empresaId) {
     }
 }
 
-function calcularDuracao(entrada) {
+function calcularDuracao(entrada, minutosEmAtendimento = null) {
+    const duracaoBackend = formatarDuracaoMinutos(minutosEmAtendimento);
+    if (duracaoBackend) return duracaoBackend;
+
     const agora = new Date();
     const entradaDate = new Date(entrada);
+    if (Number.isNaN(entradaDate.getTime())) return '-';
+
     const diff = agora - entradaDate;
 
     const horas = Math.floor(diff / 3600000);
@@ -142,3 +217,5 @@ function calcularDuracao(entrada) {
 
     return `${horas}h ${minutos}m`;
 }
+
+window.handleSaida = handleSaida;

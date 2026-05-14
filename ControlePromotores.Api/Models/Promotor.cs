@@ -9,17 +9,17 @@ namespace ControlePromotores.Api.Models
 
         [Required]
         [StringLength(11)]
-        public string CPF { get; set; }
+        public string CPF { get; set; } = null!;
 
         [Required]
         [StringLength(100)]
-        public string Nome { get; set; }
+        public string Nome { get; set; } = null!;
 
         [StringLength(20)]
-        public string Telefone { get; set; }
+        public string? Telefone { get; set; }
 
         [StringLength(150)]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Required]
         [StringLength(20)] // "promotor" ou "exclusivo"
@@ -27,7 +27,7 @@ namespace ControlePromotores.Api.Models
 
         // Para promotor exclusivo
         public int? EmpresaExclusivaId { get; set; }
-        public Empresa EmpresaExclusiva { get; set; }
+        public Empresa? EmpresaExclusiva { get; set; }
 
         public bool Ativo { get; set; } = true;
 

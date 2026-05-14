@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', async function() {
     requireAuth();
+    atualizarRotulosIndicadores();
     
     await carregarFiltros();
     
@@ -20,6 +21,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         btnResetar.addEventListener('click', resetarFiltros);
     }
 });
+
+function atualizarRotulosIndicadores() {
+    const mediaLabel = document.getElementById('mediaHoras')?.previousElementSibling;
+    const promotoresLabel = document.getElementById('diasFrequentados')?.previousElementSibling;
+    const empresasLabel = document.getElementById('consistencia')?.previousElementSibling;
+
+    if (mediaLabel) mediaLabel.textContent = 'Duração média';
+    if (promotoresLabel) promotoresLabel.textContent = 'Promotores únicos';
+    if (empresasLabel) empresasLabel.textContent = 'Empresas únicas';
+}
 
 async function carregarFiltros() {
     try {
@@ -67,37 +78,45 @@ async function gerarRelatorio() {
 }
 
 function obterFiltros() {
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+    const empresaId = document.getElementById('empresaFiltro').value;
+    const promotorId = document.getElementById('promotorFiltro').value;
+    const hoje = new Date();
+    const inicioPadrao = new Date();
+    inicioPadrao.setDate(hoje.getDate() - 30);
+
     return {
-        dataInicio: document.getElementById('dataInicio').value,
-        dataFim: document.getElementById('dataFim').value,
-        empresaId: document.getElementById('empresaFiltro').value || null,
-        promotorId: document.getElementById('promotorFiltro').value || null
+        dataInicio: dataInicio ? `${dataInicio}T00:00:00` : inicioPadrao.toISOString(),
+        dataFim: dataFim ? `${dataFim}T23:59:59` : hoje.toISOString(),
+        empresaId: empresaId ? parseInt(empresaId, 10) : null,
+        promotorId: promotorId ? parseInt(promotorId, 10) : null
     };
 }
 
 function mostrarIndicadores(relatorio) {
     document.getElementById('totalRegistros').textContent = relatorio.totalRegistros || 0;
-    document.getElementById('mediaHoras').textContent = (relatorio.mediaHoras || 0).toFixed(1) + 'h';
-    document.getElementById('diasFrequentados').textContent = relatorio.diasFrequentados || 0;
-    document.getElementById('consistencia').textContent = (relatorio.consistencia || 0).toFixed(0) + '%';
+    document.getElementById('mediaHoras').textContent = formatarDuracaoHoras(relatorio.duracaoMediaMinutos || 0);
+    document.getElementById('diasFrequentados').textContent = relatorio.promotoresUnicos || 0;
+    document.getElementById('consistencia').textContent = relatorio.empresasUnicos || 0;
 }
 
 function renderizarRelatorio(relatorio) {
     const tbody = document.getElementById('tbodyRelatorio');
-    if (!tbody || !relatorio.registros) return;
+    if (!tbody) return;
     
     tbody.innerHTML = '';
     
-    relatorio.registros.forEach(reg => {
+    (relatorio.registros || []).forEach(reg => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${reg.promotorNome}</td>
             <td>${reg.empresaNome}</td>
-            <td>${new Date(reg.data).toLocaleDateString('pt-BR')}</td>
-            <td>${getDiaSemana(reg.data)}</td>
+            <td>${new Date(reg.entrada).toLocaleDateString('pt-BR')}</td>
+            <td>${getDiaSemana(reg.entrada)}</td>
             <td>${new Date(reg.entrada).toLocaleTimeString('pt-BR')}</td>
             <td>${reg.saida ? new Date(reg.saida).toLocaleTimeString('pt-BR') : '-'}</td>
-            <td>${reg.duracao || '-'}</td>
+            <td>${formatarDuracaoMinutos(reg.duracaoMinutos)}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -135,4 +154,16 @@ function resetarFiltros() {
 function getDiaSemana(data) {
     const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     return dias[new Date(data).getDay()];
+}
+
+function formatarDuracaoMinutos(minutos) {
+    if (minutos === null || minutos === undefined) return '-';
+
+    const horas = Math.floor(minutos / 60);
+    const mins = minutos % 60;
+    return `${horas}h ${mins}m`;
+}
+
+function formatarDuracaoHoras(minutos) {
+    return `${(minutos / 60).toFixed(1)}h`;
 }

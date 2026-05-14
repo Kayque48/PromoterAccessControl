@@ -60,25 +60,33 @@ form label {
 }
 
 .btn-edit {
-    background: rgba(92, 140, 255, 0.2);
-    color: #8fb7ff;
-    border: 1px solid rgba(92, 140, 255, 0.4);
+    background: rgba(92, 140, 255, 0.16);
+    color: #dbeafe;
+    border: 1px solid rgba(92, 140, 255, 0.42);
+    border-radius: 0.7rem;
+    font-weight: 600;
 }
 
-.btn-edit:hover {
-    background: rgba(92, 140, 255, 0.3);
-    color: #a8c5ff;
+.btn-edit:hover,
+.btn-edit:focus {
+    background: rgba(92, 140, 255, 0.28);
+    color: #ffffff;
+    border-color: rgba(143, 183, 255, 0.72);
 }
 
 .btn-delete {
-    background: rgba(239, 68, 68, 0.18);
-    color: #fca5a5;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.16);
+    color: #fecaca;
+    border: 1px solid rgba(239, 68, 68, 0.38);
+    border-radius: 0.7rem;
+    font-weight: 600;
 }
 
-.btn-delete:hover {
-    background: rgba(239, 68, 68, 0.25);
-    color: #fecaca;
+.btn-delete:hover,
+.btn-delete:focus {
+    background: rgba(239, 68, 68, 0.28);
+    color: #ffffff;
+    border-color: rgba(252, 165, 165, 0.72);
 }
 
 @media (max-width: 768px) {

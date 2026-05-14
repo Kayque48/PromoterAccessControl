@@ -2,45 +2,265 @@
 
 let promotoresLista = [];
 let empresasPromotorLista = [];
+const EMAIL_PROMOTOR_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 document.addEventListener('DOMContentLoaded', async function() {
     // Verifica autenticação
     requireAuth();
-    
+
     // Carrega empresas para select
     await carregarEmpresasSelectPromotor();
-    
+
     // Carrega promotores
     await carregarPromotores();
-    
+
     // Listeners de formulário
     const formPromotor = document.getElementById('formPromotor');
     if (formPromotor) {
         formPromotor.addEventListener('submit', handleSalvarPromotor);
     }
-    
+
     const btnNovoPromotor = document.getElementById('btnNovoPromotor');
     if (btnNovoPromotor) {
         btnNovoPromotor.addEventListener('click', limparFormularioPromotor);
     }
-    
-    // Configurar event listeners para CEP
-    const btnBuscarCep = document.getElementById('btnBuscarCep');
-    if (btnBuscarCep) {
-        btnBuscarCep.addEventListener('click', buscarCepPromotor);
-    }
-    
-    const cepInput = document.getElementById('cep');
-    if (cepInput) {
-        cepInput.addEventListener('blur', buscarCepPromotor);
-        cepInput.addEventListener('input', () => {
-            let cep = cepInput.value.replace(/\D/g, '');
-            if (cep.length === 8) {
-                buscarCepPromotor();
-            }
+
+    const btnCancelarTopo = document.getElementById('btnCancelarEmpresa');
+    if (btnCancelarTopo) {
+        btnCancelarTopo.addEventListener('click', () => {
+            bootstrap.Modal.getInstance(document.getElementById('modalPromotor'))?.hide();
+            limparFormularioPromotor();
         });
     }
+
+    const filtroPromotor = document.getElementById('filtroPromotor');
+    if (filtroPromotor) {
+        filtroPromotor.addEventListener('input', renderizarPromotores);
+    }
+
+    configurarMascarasPromotor();
 });
+
+function somenteDigitos(valor, limite) {
+    const digits = String(valor || '').replace(/\D/g, '');
+    return limite ? digits.slice(0, limite) : digits;
+}
+
+function normalizarBusca(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function aplicarMascaraCEP(valor) {
+    const digits = somenteDigitos(valor, 8);
+    if (digits.length <= 5) return digits;
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+function aplicarMascaraTelefone(valor) {
+    const digits = somenteDigitos(valor, 11);
+
+    if (!digits) return '';
+    if (digits.length <= 2) return `(${digits}`;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) {
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function normalizarEmail(valor) {
+    return String(valor || '').trim().replace(/\s+/g, '').slice(0, 150);
+}
+
+function normalizarUF(valor) {
+    return String(valor || '').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase();
+}
+
+function feedbackAnchor(input) {
+    return input?.closest('.input-group') || input;
+}
+
+function getFeedbackElement(input) {
+    if (!input?.id) return null;
+
+    const anchor = feedbackAnchor(input);
+    const parent = anchor?.parentElement;
+    if (!parent) return null;
+
+    const id = `${input.id}Feedback`;
+    let feedback = parent.querySelector(`#${id}`);
+
+    if (!feedback) {
+        feedback = document.createElement('small');
+        feedback.id = id;
+        feedback.className = 'validation-feedback d-none';
+        anchor.insertAdjacentElement('afterend', feedback);
+    }
+
+    return feedback;
+}
+
+function limparFeedback(input) {
+    input?.classList.remove('erro', 'sucesso');
+    input?.setCustomValidity('');
+
+    const feedback = getFeedbackElement(input);
+    if (feedback) {
+        feedback.textContent = '';
+        feedback.classList.add('d-none');
+    }
+}
+
+function marcarCampoInvalido(input, mensagem) {
+    if (!input) return false;
+
+    input.classList.remove('sucesso');
+    input.classList.add('erro');
+    input.setCustomValidity(mensagem);
+
+    const feedback = getFeedbackElement(input);
+    if (feedback) {
+        feedback.textContent = mensagem;
+        feedback.classList.remove('d-none');
+    }
+
+    return false;
+}
+
+function marcarCampoAviso(input, mensagem) {
+    if (!input) return false;
+
+    input.classList.remove('sucesso');
+    input.classList.add('erro');
+    input.setCustomValidity('');
+
+    const feedback = getFeedbackElement(input);
+    if (feedback) {
+        feedback.textContent = mensagem;
+        feedback.classList.remove('d-none');
+    }
+
+    return false;
+}
+
+function marcarCampoValido(input) {
+    if (!input) return true;
+
+    input.classList.remove('erro');
+    if (input.value.trim()) input.classList.add('sucesso');
+    input.setCustomValidity('');
+
+    const feedback = getFeedbackElement(input);
+    if (feedback) {
+        feedback.textContent = '';
+        feedback.classList.add('d-none');
+    }
+
+    return true;
+}
+
+function validarEmailInput(input, obrigatorio = false) {
+    if (!input) return true;
+
+    input.value = normalizarEmail(input.value);
+    if (!input.value) {
+        return obrigatorio
+            ? marcarCampoInvalido(input, 'Informe um email valido.')
+            : marcarCampoValido(input);
+    }
+
+    return EMAIL_PROMOTOR_REGEX.test(input.value)
+        ? marcarCampoValido(input)
+        : marcarCampoInvalido(input, 'Use um email valido, como nome@email.com.');
+}
+
+function validarTelefoneInput(input, obrigatorio = false) {
+    if (!input) return true;
+
+    const digits = somenteDigitos(input.value, 11);
+    input.value = aplicarMascaraTelefone(digits);
+
+    if (!digits) {
+        return obrigatorio
+            ? marcarCampoInvalido(input, 'Informe um telefone.')
+            : marcarCampoValido(input);
+    }
+
+    return digits.length >= 10
+        ? marcarCampoValido(input)
+        : marcarCampoInvalido(input, 'Informe DDD e numero do telefone.');
+}
+
+function validarCepInput(input) {
+    if (!input) return true;
+
+    const digits = somenteDigitos(input.value, 8);
+    input.value = aplicarMascaraCEP(digits);
+
+    if (!digits) {
+        limparFeedback(input);
+        return true;
+    }
+
+    return digits.length === 8
+        ? marcarCampoValido(input)
+        : marcarCampoAviso(input, 'CEP deve ter 8 digitos.');
+}
+
+function configurarMascarasPromotor() {
+    const cpfInput = document.getElementById('cpf');
+    const cepInput = document.getElementById('cepPromotor');
+    const telefoneInput = document.getElementById('telefone');
+    const emailInput = document.getElementById('email');
+    const numeroInput = document.getElementById('numeroPromotor');
+    const estadoInput = document.getElementById('estadoPromotor');
+    const btnBuscarCep = document.getElementById('btnBuscarCepPromotor');
+
+    cpfInput?.addEventListener('input', () => {
+        cpfInput.value = aplicarMascaraCPF(cpfInput.value);
+        limparFeedback(cpfInput);
+    });
+    cpfInput?.addEventListener('blur', () => validarCPFInput(cpfInput));
+
+    cepInput?.addEventListener('input', () => {
+        cepInput.value = aplicarMascaraCEP(cepInput.value);
+        limparFeedback(cepInput);
+    });
+    cepInput?.addEventListener('blur', () => {
+        const digits = somenteDigitos(cepInput.value, 8);
+        if (!digits) {
+            limparFeedback(cepInput);
+            return;
+        }
+        if (validarCepInput(cepInput)) buscarCepPromotor();
+    });
+    btnBuscarCep?.addEventListener('click', buscarCepPromotor);
+
+    telefoneInput?.addEventListener('input', () => {
+        telefoneInput.value = aplicarMascaraTelefone(telefoneInput.value);
+        limparFeedback(telefoneInput);
+    });
+    telefoneInput?.addEventListener('blur', () => validarTelefoneInput(telefoneInput, false));
+
+    emailInput?.addEventListener('input', () => {
+        emailInput.value = normalizarEmail(emailInput.value);
+        limparFeedback(emailInput);
+    });
+    emailInput?.addEventListener('blur', () => validarEmailInput(emailInput, false));
+
+    numeroInput?.addEventListener('input', () => {
+        numeroInput.value = somenteDigitos(numeroInput.value, 6);
+    });
+
+    estadoInput?.addEventListener('input', () => {
+        estadoInput.value = normalizarUF(estadoInput.value);
+    });
+}
 
 async function carregarEmpresasSelectPromotor() {
     try {
@@ -143,6 +363,22 @@ function formatarTipoPromotor(tipo) {
     return tipo === 'exclusivo' ? 'Promotor Exclusivo' : 'Promotor';
 }
 
+function formatarCPFExibicao(cpf) {
+    const digits = somenteDigitos(cpf, 11);
+    return digits.length === 11 ? aplicarMascaraCPF(digits) : (cpf || '-');
+}
+
+function formatarTelefoneExibicao(telefone) {
+    const digits = somenteDigitos(telefone, 11);
+
+    if (!digits) return '-';
+    if (digits.length === 8) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+    if (digits.length === 9) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+    if (digits.length >= 10) return aplicarMascaraTelefone(digits);
+
+    return telefone || '-';
+}
+
 function setModoFormularioPromotor(editando) {
     const titulo = document.getElementById('modalPromotorLabel');
     const btnSalvar = document.getElementById('btnSalvar');
@@ -161,11 +397,13 @@ function preencherFormularioPromotor(promotor) {
     document.getElementById('categoria').value = isPromotorExclusivo(promotor)
         ? 'Promotor Exclusivo'
         : 'Promotor';
-    document.getElementById('telefone').value = promotor.telefone || '';
-    document.getElementById('email').value = promotor.email || '';
+    document.getElementById('telefone').value = aplicarMascaraTelefone(promotor.telefone || '');
+    document.getElementById('email').value = normalizarEmail(promotor.email || '');
     setDiasPermitidosSelecionados(promotor.diasPermitidos);
 
-    document.getElementById('cpf').classList.remove('erro', 'sucesso');
+    ['cpf', 'telefone', 'email', 'cepPromotor'].forEach(id => {
+        limparFeedback(document.getElementById(id));
+    });
 }
 
 async function carregarPromotores() {
@@ -180,10 +418,53 @@ async function carregarPromotores() {
 function renderizarPromotores() {
     const container = document.getElementById('listaPromotores');
     if (!container) return;
+
+    const filtro = normalizarBusca(document.getElementById('filtroPromotor')?.value);
+    const filtroDigits = somenteDigitos(filtro);
+    const promotoresFiltrados = promotoresLista.filter(promotor => {
+        if (!filtro) return true;
+
+        const empresaNome = formatarEmpresasPromotor(promotor);
+        const campos = [
+            promotor.nome,
+            promotor.cpf,
+            formatarCPFExibicao(promotor.cpf),
+            promotor.email,
+            empresaNome,
+            promotor.tipo,
+            formatarTipoPromotor(promotor.tipo)
+        ].map(normalizarBusca);
+
+        const cpfDigits = somenteDigitos(promotor.cpf);
+
+        return campos.some(campo => campo.includes(filtro))
+            || (!!filtroDigits && cpfDigits.includes(filtroDigits));
+    });
     
     container.innerHTML = '';
+
+    if (promotoresFiltrados.length === 0) {
+        const mensagem = filtro
+            ? 'Nenhum promotor encontrado'
+            : 'Nenhum promotor cadastrado';
+        const detalhe = filtro
+            ? 'Revise o termo buscado ou limpe o filtro para ver todos os promotores.'
+            : 'Cadastre um promotor para que ele apareça nesta lista.';
+
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <div class="text-light fw-semibold mb-1">${mensagem}</div>
+                        <small class="text-muted">${detalhe}</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
     
-    promotoresLista.forEach(promotor => {
+    promotoresFiltrados.forEach(promotor => {
         const col = document.createElement('div');
         col.className = 'col-md-6 col-lg-4';
         col.innerHTML = `
@@ -191,16 +472,16 @@ function renderizarPromotores() {
                 <div class="card-body">
                     <h6 class="card-title">${promotor.nome}</h6>
                     <p class="card-text">
-                        <small><strong>CPF:</strong> ${promotor.cpf}</small><br/>
-                        <small><strong>Telefone:</strong> ${promotor.telefone || '-'}</small><br/>
+                        <small><strong>CPF:</strong> ${formatarCPFExibicao(promotor.cpf)}</small><br/>
+                        <small><strong>Telefone:</strong> ${formatarTelefoneExibicao(promotor.telefone)}</small><br/>
                         <small><strong>Email:</strong> ${promotor.email || '-'}</small><br/>
                         <small><strong>Tipo:</strong> ${formatarTipoPromotor(promotor.tipo)}</small><br/>
                         <small><strong>Empresa:</strong> ${formatarEmpresasPromotor(promotor)}</small><br/>
                         <small><strong>Dias:</strong> ${formatarDiasPermitidos(promotor.diasPermitidos)}</small>
                     </p>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-primary" onclick="editarPromotor(${promotor.id})">Editar</button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="deletarPromotor(${promotor.id})">Deletar</button>
+                        <button class="btn btn-sm btn-edit" onclick="editarPromotor(${promotor.id})">Editar</button>
+                        <button class="btn btn-sm btn-delete" onclick="deletarPromotor(${promotor.id})">Deletar</button>
                     </div>
                 </div>
             </div>
@@ -215,7 +496,9 @@ function limparFormularioPromotor() {
     document.getElementById('categoria').value = 'Promotor';
     setDiasPermitidosSelecionados(['segunda', 'ter\u00e7a', 'quarta', 'quinta', 'sexta']);
     setModoFormularioPromotor(false);
-    document.getElementById('cpf').classList.remove('erro', 'sucesso');
+    ['cpf', 'telefone', 'email', 'cepPromotor'].forEach(id => {
+        limparFeedback(document.getElementById(id));
+    });
 }
 
 async function editarPromotor(id) {
@@ -254,41 +537,46 @@ function buscarCepPromotor() {
     const cidade = document.getElementById('cidadePromotor');
     const estado = document.getElementById('estadoPromotor');
     
-    let cep = cepInput.value.replace(/\D/g, '');
+    if (!cepInput) return;
 
-    cepInput.classList.remove('erro', 'sucesso');
+    const cep = somenteDigitos(cepInput.value, 8);
+    cepInput.value = aplicarMascaraCEP(cep);
 
-    if (cep.length !== 8) {
-        cepInput.classList.add('erro');
-        alert('CEP inválido');
+    limparFeedback(cepInput);
+
+    if (!cep) {
         return;
     }
 
-    logradouro.classList.add('loading');
-    logradouro.value = 'Buscando...';
+    if (cep.length !== 8) {
+        marcarCampoAviso(cepInput, 'CEP deve ter 8 digitos.');
+        return;
+    }
+
+    marcarCampoValido(cepInput);
+    logradouro?.classList.add('loading');
+    if (logradouro) logradouro.value = 'Buscando...';
 
     fetch(`https://viacep.com.br/ws/${cep}/json/`)
         .then(res => res.json())
         .then(data => {
-            logradouro.classList.remove('loading');
+            logradouro?.classList.remove('loading');
 
             if (data.erro) {
-                cepInput.classList.add('erro');
-                logradouro.value = '';
-                alert('CEP não encontrado');
+                marcarCampoAviso(cepInput, 'CEP nao encontrado. Voce pode preencher o endereco manualmente.');
+                if (logradouro) logradouro.value = '';
                 return;
             }
 
-            logradouro.value = data.logradouro;
-            cidade.value = data.localidade;
-            estado.value = data.uf;
-            cepInput.classList.add('sucesso');
+            if (logradouro && data.logradouro) logradouro.value = data.logradouro;
+            if (cidade && data.localidade) cidade.value = data.localidade;
+            if (estado && data.uf) estado.value = data.uf;
+            marcarCampoValido(cepInput);
         })
         .catch(() => {
-            logradouro.classList.remove('loading');
-            logradouro.value = '';
-            cepInput.classList.add('erro');
-            alert('Erro ao buscar CEP');
+            logradouro?.classList.remove('loading');
+            if (logradouro) logradouro.value = '';
+            marcarCampoAviso(cepInput, 'Nao foi possivel buscar o CEP. Preencha o endereco manualmente.');
         });
 }
 
@@ -321,7 +609,7 @@ function validarCPF(cpf) {
 }
 
 function aplicarMascaraCPF(valor) {
-    valor = valor.replace(/\D/g, '');
+    valor = somenteDigitos(valor, 11);
 
     valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
     valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
@@ -330,36 +618,41 @@ function aplicarMascaraCPF(valor) {
     return valor;
 }
 
-const cpfInput = document.getElementById("cpf");
+function validarCPFInput(input) {
+    if (!input) return true;
 
-cpfInput?.addEventListener("input", () => {
-    cpfInput.value = aplicarMascaraCPF(cpfInput.value);
-    cpfInput.classList.remove("erro", "sucesso");
-});
+    const cpf = input.value;
+    const cpfDigits = somenteDigitos(cpf, 11);
+    input.value = aplicarMascaraCPF(cpf);
 
-cpfInput?.addEventListener("blur", () => {
-    const cpf = cpfInput.value;
-
-    if (!cpf) return;
-
-    if (!validarCPF(cpf)) {
-        cpfInput.classList.add("erro");
-    } else {
-        cpfInput.classList.add("sucesso");
+    if (!cpfDigits) {
+        return marcarCampoInvalido(input, 'Informe o CPF.');
     }
-});
+
+    return validarCPF(input.value)
+        ? marcarCampoValido(input)
+        : marcarCampoInvalido(input, 'CPF deve estar no formato 000.000.000-00 e ser valido.');
+}
 
 async function handleSalvarPromotor(e) {
     e.preventDefault();
 
     const cpfInput = document.getElementById("cpf");
-    const cpf = cpfInput.value;
-    const cpfDigits = cpf.replace(/\D/g, '');
+    const telefoneInput = document.getElementById('telefone');
+    const emailInput = document.getElementById('email');
 
-    // O backend valida o formato 000.000.000-00.
-    if (cpfDigits.length !== 11) {
-        cpfInput.classList.add("erro");
+    if (!validarCPFInput(cpfInput)) {
         cpfInput.focus();
+        return;
+    }
+
+    if (!validarTelefoneInput(telefoneInput, false)) {
+        telefoneInput.focus();
+        return;
+    }
+
+    if (!validarEmailInput(emailInput, false)) {
+        emailInput.focus();
         return;
     }
 
@@ -371,15 +664,14 @@ async function handleSalvarPromotor(e) {
         return;
     }
 
-    const cpfFormatado = aplicarMascaraCPF(cpf);
+    const cpfFormatado = aplicarMascaraCPF(cpfInput.value);
     cpfInput.value = cpfFormatado;
-    cpfInput.classList.remove("erro");
 
     const data = {
         nome: document.getElementById('nome').value.trim(),
         cpf: cpfFormatado,
-        telefone: document.getElementById('telefone').value.trim(),
-        email: document.getElementById('email').value.trim(),
+        telefone: telefoneInput.value.trim(),
+        email: emailInput.value.trim(),
         tipo: getTipoSelecionado(),
         empresaId,
         diasPermitidos: getDiasPermitidosSelecionados()

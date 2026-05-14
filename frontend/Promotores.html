@@ -51,6 +51,12 @@
                 <button class="btn btn-primary" id="btnNovoPromotor" data-bs-toggle="modal" data-bs-target="#modalPromotor" aria-label="Abrir modal de novo promotor">Novo Promotor</button>
             </div>
 
+            <div class="row mb-4">
+                <div class="col-md-5">
+                    <input type="text" id="filtroPromotor" class="form-control" placeholder="Buscar por nome, CPF, email, empresa ou tipo...">
+                </div>
+            </div>
+
             <div class="row" id="listaPromotores"></div>
 
             <div class="modal fade" id="modalPromotor" tabindex="-1" aria-labelledby="modalPromotorLabel" aria-hidden="true">
@@ -76,7 +82,7 @@
                                 <div class="row g-2">
                                     <div class="col-md-3">
                                         <label for="cpf" class="form-label">CPF</label>
-                                        <input type="text" class="form-control" id="cpf" placeholder="000.000.000-00" required>
+                                        <input type="text" class="form-control" id="cpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" autocomplete="off" required>
                                     </div>
                                     <div class="col-md-3">
                                         <label for="categoria" class="form-label">Categoria</label>
@@ -86,35 +92,35 @@
                                         </select>
                                     </div>
                                <div class="col-md-3">
-                                <label for="cepEmpresa" class="form-label">CEP</label>
+                                <label for="cepPromotor" class="form-label">CEP</label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="cepEmpresa" placeholder="00000-000" maxlength="9" />
+                                    <input type="text" class="form-control" id="cepPromotor" placeholder="00000-000" maxlength="9" inputmode="numeric" autocomplete="postal-code" />
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <label for="logradouroEmpresa" class="form-label">Rua</label>
-                                <input type="text" class="form-control" id="logradouroEmpresa" placeholder="Rua/Avenida" readonly>
+                                <label for="logradouroPromotor" class="form-label">Rua</label>
+                                <input type="text" class="form-control" id="logradouroPromotor" placeholder="Rua/Avenida" maxlength="120">
                             </div>
                             <div class="col-md-2">
-                                <label for="cidadeEmpresa" class="form-label">Cidade</label>
-                                <input type="text" class="form-control" id="cidadeEmpresa" placeholder="Cidade" readonly>
+                                <label for="cidadePromotor" class="form-label">Cidade</label>
+                                <input type="text" class="form-control" id="cidadePromotor" placeholder="Cidade" maxlength="80">
                             </div>
                             <div class="col-md-2">
-                                <label for="estadoEmpresa" class="form-label">Estado</label>
-                                <input type="text" class="form-control" id="estadoEmpresa" placeholder="Estado" readonly>
+                                <label for="estadoPromotor" class="form-label">Estado</label>
+                                <input type="text" class="form-control" id="estadoPromotor" placeholder="UF" maxlength="2" autocomplete="address-level1">
                             </div>
                             <div class="col-md-2">
-                                <label for="numeroEmpresa" class="form-label">Número</label>
-                                <input type="text" class="form-control" id="numeroEmpresa" placeholder="Número">
+                                <label for="numeroPromotor" class="form-label">Número</label>
+                                <input type="text" class="form-control" id="numeroPromotor" placeholder="Número" maxlength="6" inputmode="numeric">
                             </div>
                             <div class="col-md-4">
-                                <label for="complementoEmpresa" class="form-label">Complemento</label>
-                                <input type="text" class="form-control" id="complementoEmpresa" placeholder="Apto, bloco, etc.">
+                                <label for="complementoPromotor" class="form-label">Complemento</label>
+                                <input type="text" class="form-control" id="complementoPromotor" placeholder="Apto, bloco, etc." maxlength="80">
                             </div>
                         </div>
                         <div class="mt-3">
-                            <button type="submit" class="btn btn-primary" id="btnSalvarEmpresa" aria-label="Salvar empresa">Salvar</button>
-                            <button type="button" class="btn btn-secondary" id="btnCancelarEmpresa" aria-label="Cancelar cadastro de empresa">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="btnSalvarEmpresa" aria-label="Salvar promotor">Salvar</button>
+                            <button type="button" class="btn btn-secondary" id="btnCancelarEmpresa" aria-label="Cancelar cadastro de promotor">Cancelar</button>
                         </div>
                                 </div>
                                 <div class="modal-body">
@@ -154,11 +160,11 @@
                                 </div>
                                     <div class="mb-3">
                                         <label for="telefone" class="form-label">Telefone</label>
-                                        <input type="text" class="form-control" id="telefone">
+                                        <input type="text" class="form-control" id="telefone" placeholder="(00) 00000-0000" maxlength="15" inputmode="tel" autocomplete="tel">
                                     </div>
                                     <div class="mb-3">
                                         <label for="email" class="form-label">E-mail</label>
-                                        <input type="email" class="form-control" id="email">
+                                        <input type="email" class="form-control" id="email" placeholder="nome@email.com" maxlength="150" autocomplete="email">
                                     </div>
                                 </div>
                                 <div class="modal-body">
@@ -180,6 +186,5 @@
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/promotores.js"></script>
-    <script src="js/empresas.js"></script>
 </body>
 </html>

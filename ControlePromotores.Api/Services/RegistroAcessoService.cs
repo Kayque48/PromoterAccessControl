@@ -69,7 +69,7 @@ namespace ControlePromotores.Api.Services
                 Tipo = "entrada",
                 DataHora = DateTime.UtcNow,
                 RegistradoPor = usuarioId,
-                Observacao = observacao ?? null!
+                Observacao = observacao
             };
 
             _context.Registros.Add(registro);
@@ -128,7 +128,7 @@ namespace ControlePromotores.Api.Services
                 DataHora = dataSaida,
                 PermanenciaMin = permanenciaMin,
                 RegistradoPor = usuarioId,
-                Observacao = observacao ?? null!
+                Observacao = observacao
             };
 
             _context.Registros.Add(registro);

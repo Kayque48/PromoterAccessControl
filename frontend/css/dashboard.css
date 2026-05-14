@@ -235,7 +235,55 @@ canvas {
 
 .btn-outline-secondary:hover,
 .btn-outline-secondary:focus {
+    color: #fff;
     background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.btn-secondary {
+    color: #e9f2ff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.btn-edit,
+.btn-delete {
+    border-radius: 0.7rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-edit {
+    color: #dbeafe;
+    background: rgba(92, 140, 255, 0.16);
+    border: 1px solid rgba(92, 140, 255, 0.42);
+}
+
+.btn-edit:hover,
+.btn-edit:focus {
+    color: #ffffff;
+    background: rgba(92, 140, 255, 0.28);
+    border-color: rgba(143, 183, 255, 0.72);
+}
+
+.btn-delete {
+    color: #fecaca;
+    background: rgba(239, 68, 68, 0.16);
+    border: 1px solid rgba(239, 68, 68, 0.38);
+}
+
+.btn-delete:hover,
+.btn-delete:focus {
+    color: #ffffff;
+    background: rgba(239, 68, 68, 0.28);
+    border-color: rgba(252, 165, 165, 0.72);
 }
 
 .form-control,
@@ -245,6 +293,46 @@ canvas {
     color: #fff;
     border-radius: 1rem;
     padding: 0.9rem 1rem;
+}
+
+.form-control::placeholder {
+    color: rgba(245, 248, 255, 0.48);
+}
+
+.form-select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23d5eaff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 16px 12px;
+    padding-right: 2.75rem;
+}
+
+.form-select option {
+    color: #f5f8ff;
+    background: #0f2348;
+}
+
+.form-control::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.85;
+}
+
+.validation-feedback {
+    display: block;
+    min-height: 1rem;
+    margin-top: 0.35rem;
+    color: #fca5a5;
+    font-size: 0.82rem;
+    line-height: 1.25;
+}
+
+.form-control[readonly],
+.form-control:disabled,
+.form-select:disabled {
+    color: rgba(245, 248, 255, 0.68);
+    background: rgba(255, 255, 255, 0.055);
+    border-color: rgba(255, 255, 255, 0.1);
+    opacity: 1;
 }
 
 .form-control:focus,
@@ -294,6 +382,42 @@ canvas {
     background-color: rgba(4, 15, 34, 0.65);
 }
 
+.table-responsive {
+    border-radius: 1.2rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.table {
+    --bs-table-color: #d5eaff;
+    --bs-table-bg: rgba(11, 28, 58, 0.62);
+    --bs-table-border-color: rgba(255, 255, 255, 0.08);
+    --bs-table-striped-color: #e9f2ff;
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.035);
+    --bs-table-hover-color: #ffffff;
+    --bs-table-hover-bg: rgba(92, 140, 255, 0.1);
+    color: #d5eaff;
+    margin-bottom: 0;
+}
+
+.table thead th {
+    color: #ffffff;
+    background: rgba(92, 140, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.08);
+    font-weight: 700;
+}
+
+.table tbody td {
+    color: #d5eaff;
+    border-color: rgba(255, 255, 255, 0.08);
+    vertical-align: middle;
+}
+
+.table tbody tr td:first-child {
+    color: #ffffff;
+    font-weight: 600;
+}
+
 @media (max-width: 991px) {
     .sidebar {
         width: 100%;
@@ -312,7 +436,8 @@ canvas {
 
 /* Destaque enquanto busca */
 .loading {
-    background-color: #f0f8ff;
+    color: #f5f8ff !important;
+    background-color: rgba(92, 140, 255, 0.18) !important;
     opacity: 0.7;
 }
 
@@ -327,7 +452,8 @@ canvas {
 }
 
 .loading {
-    background-color: #eef;
+    color: #f5f8ff !important;
+    background-color: rgba(92, 140, 255, 0.18) !important;
 }
 
 .sucesso {
