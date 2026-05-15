@@ -25,8 +25,8 @@ async function carregarDados() {
         // Atualiza cards de indicadores
         atualizarIndicadores(dashboard);
         
-        // Carrega gráficos
-        await carregarGraficos();
+        // [TEMPORARIAMENTE DESATIVADO] Carrega gráficos - causa crescimento infinito do canvas
+        // await carregarGraficos();
         
     } catch (error) {
         console.error('Erro ao carregar dashboard:', error);
