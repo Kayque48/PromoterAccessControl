@@ -1,64 +1,102 @@
 # ========================================
 # .gitignore - Promoter Access Control
 # ========================================
-# Ignora arquivos e pastas desnecessários no versionamento Git
 
-# Diretórios de build e compilação
-bin/
-obj/
-Debug/
-Release/
+# ------------------------------
+# .NET / C# build artifacts
+# ------------------------------
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+AnyCPU/
 
-# Arquivos de dependências .NET
-*.deps.json
-*.runtimeconfig.json
-*.runtimeconfig.dev.json
+# Arquivos gerados em build/publicação
+publish/
+PublishProfiles/
+artifacts/
 
-# Arquivos de cache e temporários
+# Arquivos de pacote / restore
+*.nupkg
+*.snupkg
+*.nuspec
+.nuget/
+packages/
+
+# ------------------------------
+# User / IDE / editor
+# ------------------------------
 .vs/
 .vscode/
-*.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.csproj.user
+*.rsuser
+*.sln.DotSettings.user
+*.userprefs
+
+# Arquivos temporários de editor/sistema
 *.swp
 *.swo
 *~
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Arquivos de projeto do Visual Studio
-*.csproj.user
-*.sln.DotSettings.user
-*.userprefs
-.idea/
-
-# Arquivos de log
+# ------------------------------
+# Logs / diagnostics
+# ------------------------------
 *.log
 logs/
 *.stackdump
 
-# Pasta de publicação
-publish/
-PublishProfiles/
-
-# NuGet
-*.nupkg
-*.nuspec
-# nuget.config
-.nuget/
-
-# Ambiente local
+# ------------------------------
+# Environment / local config
+# ------------------------------
 .env
-.env.local
-appsettings.Development.json
+.env.*
+!.env.example
 
-# SQLite databases
+# Config local de desenvolvimento
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+
+# ------------------------------
+# Databases / local data
+# ------------------------------
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 
-# Outros
+# Se quiser preservar scripts SQL, eles NÃO entram aqui.
+# Ex.: database/*.sql continua versionado.
+
+# ------------------------------
+# Frontend / generic build outputs
+# ------------------------------
 dist/
 build/
-node_modules/
-.nyc_output/
 coverage/
-.fake
+.nyc_output/
+node_modules/
+
+# ------------------------------
+# Testing / misc
+# ------------------------------
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# ------------------------------
+# OS / cache leftovers
+# ------------------------------
+.fake/
