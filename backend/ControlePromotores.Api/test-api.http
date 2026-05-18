@@ -1,0 +1,273 @@
+@baseUrl = https://localhost:5001
+@token = 
+
+#####################
+# 🔐 AUTENTICAÇÃO
+#####################
+
+### Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "login": "admin",
+  "senha": "admin123"
+}
+
+###
+
+### Registrar novo usuário (altere o token após login)
+POST {{baseUrl}}/api/auth/register
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Novo Usuário",
+  "login": "usuario1",
+  "senha": "senha123",
+  "perfil": "usuario"
+}
+
+#####################
+# 🏢 EMPRESAS
+#####################
+
+### Listar todas as empresas
+GET {{baseUrl}}/api/empresas
+Authorization: Bearer {{token}}
+
+###
+
+### Buscar empresa por ID
+GET {{baseUrl}}/api/empresas/1
+Authorization: Bearer {{token}}
+
+###
+
+### Criar nova empresa
+POST {{baseUrl}}/api/empresas
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cnpj": "12.345.678/0001-90",
+  "razaoSocial": "Empresa LTDA",
+  "nomeFantasia": "Empresa XYZ",
+  "telefone": "1133334444",
+  "email": "contato@empresa.com.br",
+  "endereco": "Rua A",
+  "numero": "123",
+  "complemento": "Sala 1",
+  "bairro": "Centro",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "cep": "01234-567"
+}
+
+###
+
+### Atualizar empresa
+PUT {{baseUrl}}/api/empresas/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cnpj": "12.345.678/0001-90",
+  "razaoSocial": "Empresa LTDA Atualizada",
+  "nomeFantasia": "Empresa XYZ",
+  "telefone": "1133334444",
+  "email": "contato@empresa.com.br",
+  "endereco": "Rua A",
+  "numero": "123",
+  "complemento": "Sala 1",
+  "bairro": "Centro",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "cep": "01234-567"
+}
+
+###
+
+### Deletar empresa
+DELETE {{baseUrl}}/api/empresas/1
+Authorization: Bearer {{token}}
+
+#####################
+# 👔 PROMOTORES
+#####################
+
+### Listar todos os promotores
+GET {{baseUrl}}/api/promotores
+Authorization: Bearer {{token}}
+
+###
+
+### Listar promotores de uma empresa
+GET {{baseUrl}}/api/promotores?empresaId=1
+Authorization: Bearer {{token}}
+
+###
+
+### Buscar promotor por ID
+GET {{baseUrl}}/api/promotores/1
+Authorization: Bearer {{token}}
+
+###
+
+### Criar novo promotor
+POST {{baseUrl}}/api/promotores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "João Silva",
+  "cpf": "123.456.789-00",
+  "telefone": "11987654321",
+  "email": "joao@example.com",
+  "endereco": "Rua B",
+  "numero": "456",
+  "complemento": "Apt 101",
+  "bairro": "Vila",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "cep": "01234-567",
+  "empresaId": 1
+}
+
+###
+
+### Atualizar promotor
+PUT {{baseUrl}}/api/promotores/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "João Silva",
+  "cpf": "123.456.789-00",
+  "telefone": "11987654321",
+  "email": "joao@example.com",
+  "endereco": "Rua B",
+  "numero": "456",
+  "complemento": "Apt 101",
+  "bairro": "Vila",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "cep": "01234-567",
+  "empresaId": 1
+}
+
+###
+
+### Deletar promotor
+DELETE {{baseUrl}}/api/promotores/1
+Authorization: Bearer {{token}}
+
+#####################
+# ⏰ REGISTROS DE ACESSO
+#####################
+
+### Registrar entrada
+POST {{baseUrl}}/api/registrosacesso/entrada
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "promotorId": 1
+}
+
+###
+
+### Registrar saída
+POST {{baseUrl}}/api/registrosacesso/saida
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "registroId": 1
+}
+
+###
+
+### Listar promotores ativos (sem saída)
+GET {{baseUrl}}/api/registrosacesso/ativos
+Authorization: Bearer {{token}}
+
+###
+
+### Buscar registros por promotor
+GET {{baseUrl}}/api/registrosacesso/promotor/1
+Authorization: Bearer {{token}}
+
+###
+
+### Buscar registros por promotor com filtro de data
+GET {{baseUrl}}/api/registrosacesso/promotor/1?dataInicio=2024-04-01&dataFim=2024-04-05
+Authorization: Bearer {{token}}
+
+###
+
+### Buscar registros por empresa
+GET {{baseUrl}}/api/registrosacesso/empresa/1
+Authorization: Bearer {{token}}
+
+###
+
+### Buscar registro por ID
+GET {{baseUrl}}/api/registrosacesso/1
+Authorization: Bearer {{token}}
+
+#####################
+# 📊 DASHBOARD
+#####################
+
+### Dashboard - Dados de hoje
+GET {{baseUrl}}/api/dashboard/hoje
+Authorization: Bearer {{token}}
+
+###
+
+### Dashboard - Visitas por dia (última semana)
+GET {{baseUrl}}/api/dashboard/visitassemana
+Authorization: Bearer {{token}}
+
+###
+
+### Dashboard - Duração média por promotor
+GET {{baseUrl}}/api/dashboard/duraomedia
+Authorization: Bearer {{token}}
+
+###
+
+### Dashboard - Ranking de visitas por empresa
+GET {{baseUrl}}/api/dashboard/rankingempresa
+Authorization: Bearer {{token}}
+
+#####################
+# 📄 RELATÓRIOS
+#####################
+
+### Gerar relatório agregado
+POST {{baseUrl}}/api/relatorios/agregado
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dataInicio": "2024-04-01T00:00:00Z",
+  "dataFim": "2024-04-05T23:59:59Z",
+  "empresaId": null,
+  "promotorId": null
+}
+
+###
+
+### Exportar relatório em CSV
+POST {{baseUrl}}/api/relatorios/exportar-csv
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "dataInicio": "2024-04-01T00:00:00Z",
+  "dataFim": "2024-04-05T23:59:59Z",
+  "empresaId": null,
+  "promotorId": null
+}
