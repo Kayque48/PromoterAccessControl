@@ -12,13 +12,11 @@
 x64/
 x86/
 AnyCPU/
-
-# Arquivos gerados em build/publicação
+artifacts/
 publish/
 PublishProfiles/
-artifacts/
 
-# Arquivos de pacote / restore
+# Pacotes / restore
 *.nupkg
 *.snupkg
 *.nuspec
@@ -26,7 +24,7 @@ artifacts/
 packages/
 
 # ------------------------------
-# User / IDE / editor
+# Visual Studio / VS Code / IDEs
 # ------------------------------
 .vs/
 .vscode/
@@ -37,10 +35,9 @@ packages/
 *.sln.docstates
 *.csproj.user
 *.rsuser
-*.sln.DotSettings.user
 *.userprefs
 
-# Arquivos temporários de editor/sistema
+# Cache / arquivos de editor
 *.swp
 *.swo
 *~
@@ -49,26 +46,25 @@ Thumbs.db
 Desktop.ini
 
 # ------------------------------
-# Logs / diagnostics
+# Logs / diagnósticos
 # ------------------------------
 *.log
 logs/
 *.stackdump
 
 # ------------------------------
-# Environment / local config
+# Ambiente / configs locais
 # ------------------------------
 .env
 .env.*
 !.env.example
 
-# Config local de desenvolvimento
 appsettings.Development.json
 appsettings.Local.json
 appsettings.*.local.json
 
 # ------------------------------
-# Databases / local data
+# Bancos locais / temporários
 # ------------------------------
 *.db
 *.db-shm
@@ -76,11 +72,12 @@ appsettings.*.local.json
 *.sqlite
 *.sqlite3
 
-# Se quiser preservar scripts SQL, eles NÃO entram aqui.
-# Ex.: database/*.sql continua versionado.
+# Cache específico
+*.lscache
+*.cache
 
 # ------------------------------
-# Frontend / generic build outputs
+# Frontend / artefatos genéricos
 # ------------------------------
 dist/
 build/
@@ -89,14 +86,9 @@ coverage/
 node_modules/
 
 # ------------------------------
-# Testing / misc
+# Testes
 # ------------------------------
 TestResults/
 *.trx
 *.coverage
 *.coveragexml
-
-# ------------------------------
-# OS / cache leftovers
-# ------------------------------
-.fake/

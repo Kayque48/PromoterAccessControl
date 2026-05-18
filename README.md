@@ -2,286 +2,324 @@
 
 # Controle de Promotores
 
-## Descrição
+## 📋 Visão Geral
 
-Sistema desenvolvido para controle de acesso de promotores em empresas, permitindo o registro de entrada e saída, cálculo do tempo de permanência e visualização de métricas operacionais por meio de dashboard e relatórios.
-
-O projeto está sendo desenvolvido como parte de um Trabalho de Conclusão de Curso (TCC), com foco em organização, rastreabilidade e apoio à tomada de decisão.
+Sistema acadêmico para gerenciamento de acesso e permanência de promotores em empresas, desenvolvido como trabalho de conclusão de curso (TCC) em Análise e Desenvolvimento de Sistemas. O projeto demonstra arquitetura modular, integração com banco de dados relacional, autenticação com JWT e geração de relatórios.
 
 ---
 
-## Objetivo
+## 🎯 Objetivo
 
-Centralizar o controle de presença de promotores, substituindo processos manuais por uma solução digital que permita:
+Centralizar o registro de acesso de promotores, automatizando:
 
-* Registro estruturado de acessos
-* Monitoramento em tempo real de promotores ativos
-* Cálculo automático de permanência
-* Geração de dados para análise gerencial
-
----
-
-## Tecnologias Utilizadas
-
-### Backend
-
-* ASP.NET Core Web API
-* Entity Framework Core
-* Autenticação via JWT
-
-### Banco de Dados
-
-* MySQL (estrutura oficial do projeto)
-* SQLite (utilizado para desenvolvimento local)
-
-### Frontend
-
-* HTML
-* CSS
-* JavaScript
+- Registro de entrada e saída
+- Cálculo da duração de permanência
+- Monitoramento de promotores ativos em tempo real
+- Geração de relatórios e métricas operacionais
+- Exportação de dados para análise
 
 ---
 
-## Arquitetura
+## 🛠️ Stack Tecnológico
 
-O sistema está dividido em três camadas principais:
+| Camada | Tecnologia |
+|--------|-----------|
+| **Backend** | ASP.NET Core (C#) |
+| **Banco de Dados** | MySQL (banco oficial) / SQLite (apoio local de desenvolvimento) |
+| **Frontend** | HTML5, CSS3, JavaScript vanilla |
+| **Autenticação** | JWT Bearer Token |
+| **ORM** | Entity Framework Core |
+| **Segurança** | BCrypt (hash de senhas) |
 
-* **Backend:** responsável pelas regras de negócio, autenticação e exposição da API
-* **Frontend:** responsável pela interface e consumo dos endpoints
-* **Banco de Dados:** responsável pela persistência e estrutura dos dados
+---
 
-```mermaid
-flowchart LR
-    A[Frontend] --> B[Backend API]
-    B --> C[(Banco de Dados)]
+## 📁 Estrutura do Projeto
+
+```
+PromoterAccessControl/
+├── backend/
+│   └── ControlePromotores.Api/
+│       ├── Controllers/          # Endpoints da API
+│       ├── Services/             # Lógica de negócio
+│       ├── Models/               # Entidades do domínio
+│       ├── DTOs/                 # Contratos de requisição/resposta
+│       ├── BD/                   # DbContext
+│       ├── Data/                 # Seed de dados
+│       ├── Utils/                # Utilitários
+│       └── Program.cs            # Configuração da aplicação
+├── frontend/
+│   ├── css/                      # Estilos
+│   ├── js/                       # Scripts (API client, lógica, UI)
+│   ├── img/                      # Imagens
+│   └── *.html                    # Páginas
+├── database/
+│   └── PromoterAccessControlDB.sql  # Schema MySQL oficial
+└── docs/
+    ├── visao-geral.md
+    ├── arquitetura.md
+    ├── fluxo-funcional.md
+    ├── seguranca-e-lgpd.md
+    └── pendencias-tecnicas.md
 ```
 
 ---
 
-## Estrutura do Projeto
+## ⚙️ Arquitetura
 
-```text
-ControlePromotores.Api/
-│
-├── Controllers/   # Endpoints da API
-├── Services/      # Regras de negócio
-├── Models/        # Entidades do sistema
-├── DTOs/          # Contratos de entrada/saída
-├── BD/            # DbContext
-├── Data/          # Inicialização de dados
-├── Program.cs     # Configuração da aplicação
+O sistema segue uma arquitetura em **três camadas**:
+
+```
+┌─────────────────────────────────────┐
+│  Frontend (HTML/CSS/JS)             │
+│  - Interface com usuário            │
+│  - Consumo de endpoints             │
+└─────────────┬───────────────────────┘
+              │ HTTP/REST
+              ↓
+┌─────────────────────────────────────┐
+│  Backend (ASP.NET Core)             │
+│  - Controllers (exposição)          │
+│  - Services (negócio)               │
+│  - Models (entidades)               │
+│  - DTOs (contrato)                  │
+└─────────────┬───────────────────────┘
+              │ SQL
+              ↓
+┌─────────────────────────────────────┐
+│  Banco de Dados (MySQL)             │
+│  - Persistência                     │
+│  - Relacionamentos                  │
+└─────────────────────────────────────┘
 ```
 
----
+### Padrão de Desenvolvimento
 
-## Funcionalidades
-
-* Autenticação de usuários (JWT)
-* Cadastro de empresas
-* Cadastro de promotores
-* Registro de entrada
-* Registro de saída
-* Cálculo automático de permanência
-* Consulta de promotores ativos
-* Dashboard com métricas operacionais
-* Geração de relatórios
+- **Separação em camadas:** Controllers → Services → Models/DTOs → DbContext
+- **Autenticação:** JWT com validação por roles/perfis
+- **Validação:** Realizada em Services e DTOs
+- **Persistência:** Entity Framework Core com navegação automática
 
 ---
 
-## Execução do Projeto
+## ✨ Funcionalidades Implementadas
 
-### Backend
+### Autenticação
+- Login com username e password
+- Geração e validação de JWT
+- Controle de acesso por perfil (Admin, Usuário)
+
+### Cadastros
+- **Empresas:** Criar, editar, listar, excluir
+- **Promotores:** Criar, editar, listar, vincular a empresa, controlar exclusividade
+
+### Registro de Ponto
+- **Entrada:** Registra o horário de chegada do promotor, considerando a empresa vinculada
+- **Saída:** Registra horário de partida e calcula permanência automática
+- **Ativos:** Lista em tempo real de promotores com entrada registrada e sem saída
+
+### Relatórios e Análises
+- **Dashboard:** Métricas operacionais (promotores ativos, empresas ativas, etc.)
+- **Relatórios:** Filtrados por período, empresa e promotor
+- **Exportação:** Gera arquivo com dados em formato tabulado
+
+---
+
+## 🚀 Como Executar
+
+### Pré-requisitos
+
+- **.NET SDK 10.0+** instalado
+- **Node.js** (opcional, apenas para servir frontend)
+- **MySQL Server** (banco oficial) ou deixar SQLite como fallback
+
+### 1️⃣ Preparar o Banco de Dados
+
+#### Opção A: MySQL (Recomendado - Banco Oficial)
 
 ```bash
+# No MySQL:
+mysql -u root -p < database/PromoterAccessControlDB.sql
+```
+
+Atualize a connection string em `appsettings.Development.json`:
+```json
+"MySqlConnection": "Server=localhost;Port=3306;Database=promoter_checkin;User Id=root;Password=SEU_PASSWORD;"
+```
+
+#### Opção B: SQLite (Desenvolvimento Offline)
+
+Em `appsettings.Development.json`, configure:
+```json
+"UseSqlite": true
+```
+
+### 2️⃣ Executar o Backend
+
+```bash
+cd backend/ControlePromotores.Api
+
+# Restaurar dependências
 dotnet restore
+
+# Executar em modo desenvolvimento
 dotnet run
 ```
 
-A API estará disponível em:
+O backend estará disponível em:
+- **HTTP:** `http://localhost:5297`
+- **HTTPS:** `https://localhost:7272`
+- **Swagger:** `http://localhost:5297/swagger/index.html`
 
-```text
-http://localhost:5297
+### 3️⃣ Executar o Frontend
+
+Serve o frontend usando qualquer server HTTP local (ex: http-server, Live Server no VS Code, Python http.server, etc):
+
+```bash
+cd frontend
+
+# Opção 1: http-server (npm)
+npx http-server -p 8000
+
+# Opção 2: Python
+python -m http.server 8000
+
+# Opção 3: Node http-server
+npm install -g http-server
+http-server -p 8000
 ```
 
-Documentação via Swagger:
+Frontend disponível em: `http://localhost:8000`
 
-```text
-http://localhost:5297/swagger
-```
+### ⚙️ Configurações Importantes
 
----
-
-## Comunicação com a API
-
-### Base URL
-
-```text
-http://localhost:5297/api
-```
-
-### Autenticação
-
-Endpoints protegidos requerem token JWT:
-
-```http
-Authorization: Bearer {token}
-```
-
----
-
-## Fluxo Básico
-
-```mermaid
-flowchart TD
-    A[Login] --> B[Cadastro de empresa]
-    B --> C[Cadastro de promotor]
-    C --> D[Registro de entrada]
-    D --> E[Registro de saída]
-    E --> F[Dashboard]
-```
-
----
-
-## Exemplos de Uso da API
-
-Abaixo estão exemplos básicos de utilização dos principais endpoints do sistema.
-
----
-
-### Autenticação
-
-```http
-POST /api/Auth/login
-```
+**appsettings.Development.json** é um arquivo de configuração **local não versionado**. Exemplo de estrutura:
 
 ```json
 {
-  "login": "admin",
-  "senha": "admin123"
+  "UseSqlite": false,
+  "ConnectionStrings": {
+    "MySqlConnection": "Server=localhost;Port=3306;Database=promoter_checkin;User Id=root;Password=sua_senha;"
+  },
+  "Jwt": {
+    "Key": "sua-chave-secreta-minimo-32-caracteres",
+    "Issuer": "ControlePromotoresAPI",
+    "Audience": "ControlePromotoresClient",
+    "ExpirationMinutes": 1440
+  }
 }
 ```
 
-Resposta:
-
-```json
-{
-  "token": "JWT_TOKEN_AQUI"
-}
-```
+⚠️ **IMPORTANTE:** 
+- Nunca versione segredos reais (senhas, chaves JWT) no repositório
+- Use variáveis de ambiente ou arquivos locais `.gitignore`
+- A chave JWT deve ter **mínimo 32 caracteres**
 
 ---
 
-### Registro de Entrada
+## 📊 Fluxo Principal
 
-```http
-POST /api/RegistrosAcesso/entrada
-```
-
-```json
-{
-  "promotorId": 1,
-  "empresaId": 1,
-  "usuarioId": 1,
-  "observacao": "entrada normal"
-}
-```
-
-Resposta:
-
-```json
-{
-  "id": 1,
-  "tipo": "entrada",
-  "dataHora": "2026-04-18T17:00:00",
-  "promotorId": 1,
-  "empresaId": 1
-}
-```
+1. **Autenticação:** Usuário faz login
+2. **Cadastros:** Admin cadastra empresas e promotores
+3. **Vinculação:** Promotor é vinculado à empresa (exclusivo ou não)
+4. **Entrada:** O promotor registra a chegada e o sistema considera a empresa vinculada ao cadastro
+5. **Monitoramento:** Sistema mostra promotores ativos
+6. **Saída:** Promotor registra partida (calcula duração automaticamente)
+7. **Análise:** Dados visualizáveis em dashboard, relatórios e exportação
 
 ---
 
-### Registro de Saída
+## 📈 Status Atual do Projeto
 
-```http
-POST /api/RegistrosAcesso/saida
-```
+### ✅ Implementado e Validado
 
-```json
-{
-  "promotorId": 1,
-  "empresaId": 1,
-  "usuarioId": 1
-}
-```
+- Login com autenticação JWT
+- CRUD de empresas
+- CRUD de promotores com vinculação
+- Registro de entrada e saída com cálculo de permanência
+- Consulta de promotores ativos
+- Relatórios com filtros (período, empresa, promotor)
+- Exportação de dados
+- Dashboard com métricas básicas
+- Validações de entrada (CPF, CNPJ, email, etc.)
 
-Resposta:
+### ⚠️ Estado do Dashboard
 
-```json
-{
-  "tipo": "saida",
-  "permanenciaMin": 120
-}
-```
+O dashboard está estabilizado em modo seguro. Os gráficos foram temporariamente desativados como medida de contenção técnica para evitar travamentos, enquanto os indicadores principais permanecem disponíveis.
 
----
+### 🔄 Identificados para Refinamento Futuro
 
-### Dashboard (Resumo do Dia)
-
-```http
-GET /api/Dashboard/hoje
-```
-
-Resposta:
-
-```json
-{
-  "totalPromotoresAtivos": 1,
-  "totalVisitasHoje": 2,
-  "mediaHorasPorPromotor": 2,
-  "totalRegistrosUltimos30Dias": 10
-}
-```
+- Reativação segura de gráficos com melhor tratamento de performance
+- Mecanismos avançados de rate limiting e revogação de token
+- Testes automatizados (unitários e de integração)
+- Refatoração do frontend com estrutura mais modular
+- Melhorias na validação de CNPJ nas telas
+- Refinamento da regra de promotor exclusivo vs. compartilhado
 
 ---
 
-## Regras de Alinhamento
+## 🔒 Segurança e Considerações LGPD
 
-* O banco de dados oficial deve ser considerado a fonte de verdade
-* Alterações estruturais devem ser alinhadas entre os membros do grupo
-* O backend deve refletir a estrutura do banco
-* O frontend deve consumir os endpoints existentes
+### Implementado
+
+✅ Autenticação com JWT  
+✅ Hash de senha com BCrypt  
+✅ Controle de acesso por perfil  
+✅ Validação de entrada em DTOs  
+
+### Limitações Atuais (Conscientes)
+
+⚠️ CORS configurado de forma ampla (AllowAnyOrigin)  
+⚠️ Token armazenado em localStorage (vulnerável a XSS)  
+⚠️ Ausência de mecanismo de revogação de token  
+⚠️ Rate limiting não implementado  
+⚠️ Segredos (JWT Key) em arquivo local  
+
+### Dados Pessoais Tratados
+
+O sistema processa: nome, CPF, telefone, email, vínculo com empresa e registros de entrada/saída.
+
+Em ambiente corporativo real, seria necessário:
+
+- Política formal de retenção de dados
+- Minimização consciente de dados coletados
+- Mascaramento de dados em exibição (ex: CPF parcialmente oculto)
+- Controle mais rigoroso de acesso e exportação
+- Documentação de base legal (LGPD art. 7)
+- Procedimentos de exclusão de dados
+
+O projeto atual demonstra preocupação com segurança básica, mas **não deve ser considerado compliant para produção** sem melhorias adicionais.
 
 ---
 
-## Ambiente de Desenvolvimento
+## 📝 Observações Importantes
 
-* SQLite utilizado para desenvolvimento local
-* MySQL utilizado como base oficial do projeto
+1. **Escopo Acadêmico:** Este é um projeto de TCC, com propósitos educacionais. Reflete decisões de design adequadas para demonstração, não necessariamente para ambiente corporativo.
 
----
+2. **Estrutura Modular:** A arquitetura em camadas facilita manutenção, testes e evolução futura.
 
-## Segurança
+3. **Documentação Técnica:** Consulte `docs/` para detalhes de arquitetura, fluxos funcionais e pendências técnicas.
 
-Este repositório não deve conter:
-
-* Credenciais de banco de dados
-* Tokens ou chaves reais
-* Informações sensíveis em arquivos de configuração
-
-Utilizar variáveis de ambiente ou arquivos locais não versionados quando necessário.
+4. **Dados de Exemplo:** O banco é inicializado com dados mínimos para funcionalidade básica.
 
 ---
 
-## Status do Projeto
+## 📚 Documentação Adicional
 
-* Backend implementado e funcional
-* Autenticação JWT ativa
-* Registro de acessos operacional
-* Dashboard funcional
+- [Visão Geral](docs/visao-geral.md)
+- [Arquitetura Técnica](docs/arquitetura.md)
+- [Fluxo Funcional](docs/fluxo-funcional.md)
+- [Segurança e LGPD](docs/seguranca-e-lgpd.md)
+- [Pendências Técnicas](docs/pendencias-tecnicas.md)
+- [Roteiro de Apresentação](docs/roteiro-de-apresentacao.md)
 
-Integração com frontend em andamento.
-git pull origin main --rebase
-git push origin main
-```
+Documentação interativa disponível via Swagger em `http://localhost:5297/swagger` após iniciar o backend.
 
->>>>>>> origin/Mateus-branch
+---
+
+## 👥 Equipe
+
+- **Camila** — Desenvolvimento Backend
+- **Kayque** — Banco de Dados
+- **Mateus** — Desenvolvimento Frontend
+
+TCC em Análise e Desenvolvimento de Sistemas
