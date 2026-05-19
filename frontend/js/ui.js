@@ -1,77 +1,53 @@
-function showToast(message, type = 'info') {
-    let toastContainer = document.getElementById('toastContainer');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toastContainer';
-        toastContainer.style.position = 'fixed';
-        toastContainer.style.top = '1rem';
-        toastContainer.style.right = '1rem';
-        toastContainer.style.zIndex = '1055';
-        document.body.appendChild(toastContainer);
-    }
+// ui.js - Utilitários de interface
 
-    const toastEl = document.createElement('div');
-    toastEl.className = `toast align-items-center text-white bg-${type} border-0`;
-    toastEl.style.minWidth = '220px';
-    toastEl.setAttribute('role', 'alert');
-    toastEl.setAttribute('aria-live', 'assertive');
-    toastEl.setAttribute('aria-atomic', 'true');
+// Mostra mensagem de sucesso
+function showSuccess(message) {
+    showAlert(message, 'success');
+}
 
-    toastEl.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">${message}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button>
-        </div>
+// Mostra mensagem de erro
+function showError(message) {
+    showAlert(message, 'danger');
+}
+
+// Mostra alerta genérico
+function showAlert(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
+    document.body.insertBefore(alertDiv, document.body.firstChild);
+    setTimeout(() => alertDiv.remove(), 5000);
+}
 
-    toastContainer.appendChild(toastEl);
-    const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-    toast.show();
-
-    toastEl.addEventListener('hidden.bs.toast', () => {
-        toastEl.remove();
+// Carrega opções em um select
+function loadSelectOptions(selectElement, options, valueField = 'id', textField = 'name') {
+    selectElement.innerHTML = '<option value="">Selecione...</option>';
+    options.forEach(option => {
+        const opt = document.createElement('option');
+        opt.value = option[valueField];
+        opt.textContent = option[textField];
+        selectElement.appendChild(opt);
     });
 }
 
-function setTheme(theme) {
-    document.body.classList.remove('light', 'dark');
-    document.body.classList.add(theme);
-    localStorage.setItem('theme', theme);
+// Formata data para dd/mm/yyyy
+function formatDate(date) {
+    const d = new Date(date);
+    return d.toLocaleDateString('pt-BR');
 }
 
-function initTheme() {
-    const saved = localStorage.getItem('theme') || 'light';
-    setTheme(saved);
-
-    const toggle = document.getElementById('themeToggle');
-    if (toggle) {
-        toggle.textContent = saved === 'dark' ? 'Modo Claro' : 'Modo Escuro';
-        toggle.onclick = () => {
-            const next = document.body.classList.contains('dark') ? 'light' : 'dark';
-            setTheme(next);
-            toggle.textContent = next === 'dark' ? 'Modo Claro' : 'Modo Escuro';
-            showToast(`Tema alterado para ${next === 'dark' ? 'Escuro' : 'Claro'}`, 'info');
-        };
-    }
+// Formata hora para hh:mm
+function formatTime(date) {
+    const d = new Date(date);
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function setRoleMenu() {
-    const role = localStorage.getItem('role');
-    const empresaLink = document.querySelector('.nav-link[href="empresas.html"]');
-    if (empresaLink) {
-        empresaLink.style.display = (role === 'Gestor' || role === 'Admin') ? '' : 'none';
-    }
+// Formata duração em minutos para hh:mm
+function formatDuration(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
-
-function checkEmpresaAccess() {
-    const role = localStorage.getItem('role');
-    if (role !== 'Gestor' && role !== 'Admin') {
-        showToast('Acesso negado: somente gestores e administradores', 'danger');
-        window.location.href = 'dashboard.html';
-    }
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-    initTheme();
-    setRoleMenu();
-});

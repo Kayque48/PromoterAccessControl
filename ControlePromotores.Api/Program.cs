@@ -12,10 +12,21 @@ var builder = WebApplication.CreateBuilder(args);
 // Adicionar DbContext
 // For local development, using SQLite by default
 // To enable MySQL: run 'dotnet restore' first, then set UseSqlite to false in appsettings
-var sqliteConnection = builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=promoter_control.db";
+var useSqlite = builder.Configuration.GetValue<bool>("UseSqlite");
 
 builder.Services.AddDbContext<PromotoresContext>(options =>
-    options.UseSqlite(sqliteConnection));
+{
+    if (useSqlite)
+    {
+        var sqliteConn = builder.Configuration.GetConnectionString("SqliteConnection") ?? "Data Source=promoter_control.db";
+        options.UseSqlite(sqliteConn); 
+    } else
+    {
+        var mySqlConn = builder.Configuration.GetConnectionString("MySqlConnection");
+        options.UseMySql(mySqlConn, new MySqlServerVersion(new Version(8, 0, 0)));
+    }
+});
+
 
 // Adicionar serviços
 builder.Services.AddScoped<TokenService>();
@@ -113,7 +124,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();

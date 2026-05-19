@@ -1,0 +1,111 @@
+.table-responsive {
+    border-radius: 1.2rem;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+    color: #e9f2ff;
+}
+
+.table thead th {
+    background: rgba(92, 140, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 1rem;
+    border: none;
+}
+
+.table thead th i {
+    color: rgba(92, 140, 255, 0.8);
+}
+
+.table tbody tr {
+    border-color: rgba(255, 255, 255, 0.06);
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background: rgba(92, 140, 255, 0.08);
+}
+
+.table tbody td {
+    padding: 0.95rem 1rem;
+    color: #d5eaff;
+    border-color: rgba(255, 255, 255, 0.06);
+    vertical-align: middle;
+}
+
+.table tbody tr td:first-child {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.table tbody tr td i {
+    color: rgba(92, 140, 255, 0.7);
+}
+
+.badge-success,
+.badge-danger,
+.badge-warning {
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.8rem;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+
+.badge-success {
+    background: rgba(34, 197, 94, 0.18);
+    color: #86efac;
+}
+
+.badge-danger {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fca5a5;
+}
+
+.badge-warning {
+    background: rgba(251, 146, 60, 0.18);
+    color: #fdba74;
+}
+
+#graficoRelatorio {
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
+}
+
+.card-body h5 {
+    color: #ffffff;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+}
+
+.card-body p {
+    color: #d5eaff;
+    margin-bottom: 0.5rem;
+}
+
+.form-control::-webkit-calendar-picker-indicator,
+.form-control::-moz-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+@media (max-width: 768px) {
+    .table {
+        font-size: 0.9rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .table thead th i {
+        display: none;
+    }
+}

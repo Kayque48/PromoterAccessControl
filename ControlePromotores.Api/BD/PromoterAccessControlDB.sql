@@ -14,7 +14,7 @@ USE promoter_checkin;
 -- ------------------------------------------------------------
 CREATE TABLE empresas (
   id            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
-  cnpj          CHAR(14)        NOT NULL,
+  cnpj          VARCHAR(18)        NOT NULL,
   razao_social  VARCHAR(150)    NOT NULL,
   nome_fantasia VARCHAR(150)        NULL,
   telefone      VARCHAR(20)     NOT NULL,

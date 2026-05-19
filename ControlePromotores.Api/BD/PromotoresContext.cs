@@ -354,8 +354,7 @@ namespace ControlePromotores.Api.BD
 
                 entity.Property(r => r.DataHora)
                     .IsRequired()
-                    .HasColumnType("TEXT")
-                    .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                    .HasColumnType("datetime(6)")
                     .HasColumnName("data_hora");
 
                 entity.Property(r => r.PermanenciaMin)
